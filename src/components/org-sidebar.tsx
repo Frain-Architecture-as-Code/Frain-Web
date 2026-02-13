@@ -1,6 +1,13 @@
 "use client";
 
-import { Building2, LayoutDashboard, User } from "lucide-react";
+import {
+    Building2,
+    FolderKanban,
+    LayoutDashboard,
+    Mail,
+    Settings,
+    Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,27 +22,42 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useOrg } from "@/contexts/org-context";
 
-const navigation = [
-    {
-        title: "Overview",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-    },
-    {
-        title: "Organizations",
-        href: "/dashboard/organizations",
-        icon: Building2,
-    },
-    {
-        title: "Profile",
-        href: "/dashboard/profile",
-        icon: User,
-    },
-] as const;
+function getNavigation(orgId: string) {
+    return [
+        {
+            title: "Overview",
+            href: `/dashboard/${orgId}`,
+            icon: LayoutDashboard,
+        },
+        {
+            title: "Projects",
+            href: `/dashboard/${orgId}/projects`,
+            icon: FolderKanban,
+        },
+        {
+            title: "Members",
+            href: `/dashboard/${orgId}/members`,
+            icon: Users,
+        },
+        {
+            title: "Invitations",
+            href: `/dashboard/${orgId}/invitations`,
+            icon: Mail,
+        },
+        {
+            title: "Settings",
+            href: `/dashboard/${orgId}/settings`,
+            icon: Settings,
+        },
+    ] as const;
+}
 
-export function AppSidebar() {
+export function OrgSidebar() {
     const pathname = usePathname();
+    const { organization } = useOrg();
+    const navigation = getNavigation(organization.organizationId);
 
     return (
         <Sidebar variant="inset" collapsible="icon">
@@ -43,16 +65,18 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard">
+                            <Link
+                                href={`/dashboard/${organization.organizationId}`}
+                            >
                                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                    <span className="text-sm font-bold">F</span>
+                                    <Building2 className="size-4" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-semibold">
-                                        Frain
+                                        {organization.name}
                                     </span>
                                     <span className="truncate text-xs text-muted-foreground">
-                                        Infrastructure
+                                        Organization
                                     </span>
                                 </div>
                             </Link>
@@ -62,7 +86,7 @@ export function AppSidebar() {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                    <SidebarGroupLabel>Management</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {navigation.map((item) => (
@@ -85,11 +109,12 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="sm"
-                            className="text-xs text-muted-foreground"
-                        >
-                            <span>v0.1.0</span>
+                        <SidebarMenuButton size="sm" asChild>
+                            <Link href="/dashboard">
+                                <span className="text-xs text-muted-foreground">
+                                    Back to Dashboard
+                                </span>
+                            </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
