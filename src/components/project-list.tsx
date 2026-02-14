@@ -1,8 +1,9 @@
 "use client";
 
 import {
-    Building2,
     Calendar,
+    ExternalLink,
+    FolderKanban,
     Globe,
     LayoutGrid,
     List,
@@ -10,7 +11,9 @@ import {
     Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
@@ -24,7 +27,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -34,45 +36,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ProjectController } from "@/services/projects/controller";
 import type {
-    OrganizationResponse,
-    OrganizationVisibility,
-} from "@/services/organizations/types";
-
-const sampleOrganizations: OrganizationResponse[] = [
-    {
-        organizationId: "org-1",
-        ownerMemberId: "member-1",
-        name: "Acme Corp",
-        visibility: "PUBLIC",
-        createdAt: "2025-11-15T10:30:00Z",
-        updatedAt: "2026-02-10T14:00:00Z",
-    },
-    {
-        organizationId: "org-2",
-        ownerMemberId: "member-1",
-        name: "Startup Inc",
-        visibility: "PRIVATE",
-        createdAt: "2026-01-03T08:00:00Z",
-        updatedAt: "2026-02-08T17:45:00Z",
-    },
-    {
-        organizationId: "org-3",
-        ownerMemberId: "member-2",
-        name: "Open Source Foundation",
-        visibility: "PUBLIC",
-        createdAt: "2025-09-20T12:15:00Z",
-        updatedAt: "2026-01-28T09:30:00Z",
-    },
-    {
-        organizationId: "org-4",
-        ownerMemberId: "member-1",
-        name: "Internal Tools Team",
-        visibility: "PRIVATE",
-        createdAt: "2026-02-01T16:45:00Z",
-        updatedAt: "2026-02-11T11:20:00Z",
-    },
-];
+    ProjectResponse,
+    ProjectVisibility,
+} from "@/services/projects/types";
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -100,32 +68,27 @@ function VisibilityBadge({ visibility }: { visibility: string }) {
     );
 }
 
-function CreateOrganizationDialog() {
+function CreateProjectDialog({ organizationId }: { organizationId: string }) {
+    const router = useRouter();
     const [open, setOpen] = useState(false);
-    const [name, setName] = useState("");
-    const [visibility, setVisibility] =
-        useState<OrganizationVisibility>("PUBLIC");
+    const [visibility, setVisibility] = useState<ProjectVisibility>("PUBLIC");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    function handleSubmit(event: React.FormEvent) {
+    async function handleSubmit(event: React.FormEvent) {
         event.preventDefault();
-
-        if (!name.trim()) return;
-
         setIsSubmitting(true);
 
-        // TODO: Wire up to OrganizationController.create()
-        // const result = await OrganizationController.create({
-        //     name: { value: name.trim() },
-        //     visibility,
-        // });
-
-        setTimeout(() => {
-            setIsSubmitting(false);
+        try {
+            await ProjectController.create(organizationId, { visibility });
             setOpen(false);
-            setName("");
             setVisibility("PUBLIC");
-        }, 500);
+            router.refresh();
+            toast.success("Project created successfully");
+        } catch {
+            toast.error("Failed to create project");
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     return (
@@ -133,37 +96,26 @@ function CreateOrganizationDialog() {
             <DialogTrigger asChild>
                 <Button size="sm">
                     <Plus className="mr-1 h-4 w-4" />
-                    New Organization
+                    New Project
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create Organization</DialogTitle>
+                    <DialogTitle>Create Project</DialogTitle>
                     <DialogDescription>
-                        Create a new organization to manage your projects and
-                        team members.
+                        Create a new project in this organization.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="org-name">Name</Label>
-                        <Input
-                            id="org-name"
-                            placeholder="My Organization"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="org-visibility">Visibility</Label>
+                        <Label htmlFor="project-visibility">Visibility</Label>
                         <Select
                             value={visibility}
-                            onValueChange={(value: OrganizationVisibility) =>
+                            onValueChange={(value: ProjectVisibility) =>
                                 setVisibility(value)
                             }
                         >
-                            <SelectTrigger id="org-visibility">
+                            <SelectTrigger id="project-visibility">
                                 <SelectValue placeholder="Select visibility" />
                             </SelectTrigger>
                             <SelectContent>
@@ -177,17 +129,9 @@ function CreateOrganizationDialog() {
                                 </SelectItem>
                             </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground">
-                            {visibility === "PUBLIC"
-                                ? "Anyone can see this organization and its public projects."
-                                : "Only members can see this organization and its projects."}
-                        </p>
                     </div>
                     <DialogFooter>
-                        <Button
-                            type="submit"
-                            disabled={isSubmitting || !name.trim()}
-                        >
+                        <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? "Creating..." : "Create"}
                         </Button>
                     </DialogFooter>
@@ -197,61 +141,80 @@ function CreateOrganizationDialog() {
     );
 }
 
-function OrganizationListItem({ org }: { org: OrganizationResponse }) {
+function ProjectListItem({ project }: { project: ProjectResponse }) {
     return (
-        <Link href={`/dashboard/${org.organizationId}`}>
-            <Card className="transition-colors hover:bg-muted/50">
-                <CardContent className="flex items-center justify-between py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10">
-                            <Building2 className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium leading-none">
-                                {org.name}
-                            </p>
-                            <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Calendar className="h-3 w-3" />
-                                <span>Created {formatDate(org.createdAt)}</span>
-                            </div>
+        <Card className="transition-colors hover:bg-muted/50">
+            <CardContent className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10">
+                        <FolderKanban className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium leading-none">
+                            {project.projectId}
+                        </p>
+                        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>Created {formatDate(project.createdAt)}</span>
                         </div>
                     </div>
-                    <VisibilityBadge visibility={org.visibility} />
-                </CardContent>
-            </Card>
-        </Link>
+                </div>
+                <div className="flex items-center gap-2">
+                    <VisibilityBadge visibility={project.visibility} />
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href={`/project/${project.projectId}`}>
+                            <ExternalLink className="h-4 w-4" />
+                            <span className="sr-only">Open project</span>
+                        </Link>
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
 
-function OrganizationGridItem({ org }: { org: OrganizationResponse }) {
+function ProjectGridItem({ project }: { project: ProjectResponse }) {
     return (
-        <Link href={`/dashboard/${org.organizationId}`}>
-            <Card className="transition-colors hover:bg-muted/50">
-                <CardContent className="space-y-3 pt-6">
-                    <div className="flex items-start justify-between">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-                            <Building2 className="h-5 w-5 text-primary" />
-                        </div>
-                        <VisibilityBadge visibility={org.visibility} />
+        <Card className="transition-colors hover:bg-muted/50">
+            <CardContent className="space-y-3 pt-6">
+                <div className="flex items-start justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
+                        <FolderKanban className="h-5 w-5 text-primary" />
                     </div>
-                    <div>
-                        <p className="font-medium">{org.name}</p>
-                        <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            <span>Created {formatDate(org.createdAt)}</span>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <VisibilityBadge visibility={project.visibility} />
+                        <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/project/${project.projectId}`}>
+                                <ExternalLink className="h-4 w-4" />
+                                <span className="sr-only">Open project</span>
+                            </Link>
+                        </Button>
                     </div>
-                </CardContent>
-            </Card>
-        </Link>
+                </div>
+                <div>
+                    <p className="font-medium">{project.projectId}</p>
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>Created {formatDate(project.createdAt)}</span>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
 
 type ViewMode = "list" | "grid";
 
-export default function OrganizationsPage() {
+export function ProjectList({
+    projects,
+    organizationId,
+    organizationName,
+}: {
+    projects: ProjectResponse[];
+    organizationId: string;
+    organizationName: string;
+}) {
     const [viewMode, setViewMode] = useState<ViewMode>("list");
-    const organizations = sampleOrganizations;
 
     return (
         <div className="space-y-6">
@@ -259,10 +222,10 @@ export default function OrganizationsPage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">
-                            Organizations
+                            Projects
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            Manage your organizations and their projects.
+                            Manage projects in {organizationName}.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -288,31 +251,31 @@ export default function OrganizationsPage() {
                                 <LayoutGrid className="h-4 w-4" />
                             </ToggleGroupItem>
                         </ToggleGroup>
-                        <CreateOrganizationDialog />
+                        <CreateProjectDialog organizationId={organizationId} />
                     </div>
                 </div>
             </BlurFade>
 
-            {organizations.length > 0 ? (
+            {projects.length > 0 ? (
                 viewMode === "list" ? (
                     <div className="grid gap-3">
-                        {organizations.map((org, index) => (
+                        {projects.map((project, index) => (
                             <BlurFade
-                                key={org.organizationId}
+                                key={project.projectId}
                                 delay={0.1 + index * 0.05}
                             >
-                                <OrganizationListItem org={org} />
+                                <ProjectListItem project={project} />
                             </BlurFade>
                         ))}
                     </div>
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {organizations.map((org, index) => (
+                        {projects.map((project, index) => (
                             <BlurFade
-                                key={org.organizationId}
+                                key={project.projectId}
                                 delay={0.1 + index * 0.05}
                             >
-                                <OrganizationGridItem org={org} />
+                                <ProjectGridItem project={project} />
                             </BlurFade>
                         ))}
                     </div>
@@ -322,16 +285,18 @@ export default function OrganizationsPage() {
                     <Card className="border-dashed">
                         <CardContent className="flex flex-col items-center justify-center py-12">
                             <div className="mb-4 rounded-full bg-muted p-3">
-                                <Building2 className="h-6 w-6 text-muted-foreground" />
+                                <FolderKanban className="h-6 w-6 text-muted-foreground" />
                             </div>
                             <p className="mb-1 text-sm font-semibold">
-                                No organizations yet
+                                No projects yet
                             </p>
                             <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
-                                Create your first organization to start managing
-                                projects and collaborating with your team.
+                                Create your first project to start modeling your
+                                architecture.
                             </p>
-                            <CreateOrganizationDialog />
+                            <CreateProjectDialog
+                                organizationId={organizationId}
+                            />
                         </CardContent>
                     </Card>
                 </BlurFade>

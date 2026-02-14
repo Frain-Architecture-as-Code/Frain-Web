@@ -1,4 +1,9 @@
-import { createProject, updateProject } from "./actions";
+import {
+    createProject,
+    getProjectById,
+    getProjects,
+    updateProject,
+} from "./actions";
 import type {
     CreateProjectRequest,
     ProjectResponse,
@@ -6,6 +11,17 @@ import type {
 } from "./types";
 
 export class ProjectController {
+    static async getAll(organizationId: string): Promise<ProjectResponse[]> {
+        return getProjects(organizationId);
+    }
+
+    static async getById(
+        organizationId: string,
+        projectId: string,
+    ): Promise<ProjectResponse> {
+        return getProjectById(organizationId, projectId);
+    }
+
     static async create(
         organizationId: string,
         request: CreateProjectRequest,

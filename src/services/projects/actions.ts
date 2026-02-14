@@ -7,6 +7,25 @@ import type {
     UpdateProjectVisibilityRequest,
 } from "./types";
 
+export async function getProjects(
+    organizationId: string,
+): Promise<ProjectResponse[]> {
+    const { data } = await api.get<ProjectResponse[]>(
+        `/api/v1/organizations/${organizationId}/projects`,
+    );
+    return data;
+}
+
+export async function getProjectById(
+    organizationId: string,
+    projectId: string,
+): Promise<ProjectResponse> {
+    const { data } = await api.get<ProjectResponse>(
+        `/api/v1/organizations/${organizationId}/projects/${projectId}`,
+    );
+    return data;
+}
+
 export async function createProject(
     organizationId: string,
     request: CreateProjectRequest,
