@@ -1,6 +1,6 @@
 "use client";
 
-import { oauthAction } from "@/actions/auth";
+import { oauthAction } from "@/services/auth/actions/auth";
 import { Button } from "@/components/ui/button";
 import { GithubDark } from "@/components/ui/svgs/githubDark";
 import { GithubLight } from "@/components/ui/svgs/githubLight";

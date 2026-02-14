@@ -3,7 +3,7 @@
 import { LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOutAction } from "@/actions/auth";
+import { signOutAction } from "@/services/auth/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,

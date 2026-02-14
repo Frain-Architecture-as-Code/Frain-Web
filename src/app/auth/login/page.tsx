@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useActionState, useEffect } from "react";
 import { toast } from "sonner";
-import { type AuthResult, loginAction } from "@/actions/auth";
+import { type AuthResult, loginAction } from "@/services/auth/actions/auth";
 import { OAuthButtons } from "@/components/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import {
