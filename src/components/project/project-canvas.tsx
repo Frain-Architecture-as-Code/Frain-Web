@@ -159,7 +159,7 @@ export function ProjectCanvas({
         <div className="relative h-full w-full">
             <ProjectSidebar
                 projectId={projectId}
-                modelTitle={c4Model.c4Model.title}
+                modelTitle={c4Model.c4Model?.title || "Untitled"}
                 views={views}
                 activeViewId={activeViewId}
                 onViewSelect={loadView}
