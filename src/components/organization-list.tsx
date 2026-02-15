@@ -199,7 +199,7 @@ function OrganizationGridItem({ org }: { org: OrganizationResponse }) {
     return (
         <Link href={`/dashboard/${org.organizationId}`}>
             <Card className="transition-colors hover:bg-muted/50">
-                <CardContent className="space-y-3 pt-6">
+                <CardContent className="space-y-3">
                     <div className="flex items-start justify-between">
                         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
                             <Building2 className="h-5 w-5 text-primary" />
