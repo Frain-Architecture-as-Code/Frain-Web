@@ -29,7 +29,7 @@ import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 interface ProjectCanvasProps {
     projectId: string;
     organizationId: string;
-    c4Model: C4ModelResponse;
+    c4Model: C4ModelResponse | null;
     initialViews: ViewSummaryResponse[];
     initialApiKeys: ProjectApiKeyResponse[];
 }
@@ -85,7 +85,8 @@ export function ProjectCanvas({
             return;
         }
 
-        const firstEmbeddedView = c4Model.c4Model.views[0];
+        // Fallback to embedded views if c4Model exists
+        const firstEmbeddedView = c4Model?.c4Model?.views?.[0];
         if (firstEmbeddedView) {
             layoutNodes(
                 firstEmbeddedView.nodes,
@@ -101,6 +102,7 @@ export function ProjectCanvas({
             return;
         }
 
+        // No views available - just stop loading
         setIsLoading(false);
     }, [initialViews, c4Model, setNodes, setEdges]);
 
@@ -159,7 +161,7 @@ export function ProjectCanvas({
         <div className="relative h-full w-full">
             <ProjectSidebar
                 projectId={projectId}
-                modelTitle={c4Model.c4Model?.title || "Untitled"}
+                modelTitle={c4Model?.c4Model?.title || "Untitled"}
                 views={views}
                 activeViewId={activeViewId}
                 onViewSelect={loadView}
@@ -207,6 +209,21 @@ export function ProjectCanvas({
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                         Loading diagram...
+                    </div>
+                </div>
+            )}
+
+            {!isLoading && nodes.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                        <p className="text-lg font-medium">
+                            No views available
+                        </p>
+                        <p className="text-sm mt-1">
+                            {c4Model === null
+                                ? "C4 model not found"
+                                : "Create a view to visualize your architecture"}
+                        </p>
                     </div>
                 </div>
             )}
