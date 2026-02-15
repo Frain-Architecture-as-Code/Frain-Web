@@ -162,7 +162,9 @@ function ProjectListItem({ project }: { project: ProjectResponse }) {
                 <div className="flex items-center gap-2">
                     <VisibilityBadge visibility={project.visibility} />
                     <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/project/${project.projectId}`}>
+                        <Link
+                            href={`/dashboard/${project.organizationId}/project/${project.projectId}`}
+                        >
                             <ExternalLink className="h-4 w-4" />
                             <span className="sr-only">Open project</span>
                         </Link>
@@ -184,7 +186,9 @@ function ProjectGridItem({ project }: { project: ProjectResponse }) {
                     <div className="flex items-center gap-2">
                         <VisibilityBadge visibility={project.visibility} />
                         <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/project/${project.projectId}`}>
+                            <Link
+                                href={`/dashboard/${project.organizationId}/project/${project.projectId}`}
+                            >
                                 <ExternalLink className="h-4 w-4" />
                                 <span className="sr-only">Open project</span>
                             </Link>

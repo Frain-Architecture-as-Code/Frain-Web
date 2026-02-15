@@ -15,6 +15,7 @@ import "@xyflow/react/dist/style.css";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { c4NodeTypes } from "@/components/project/c4-nodes";
+import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
 import { ProjectSidebar } from "@/components/project/project-sidebar";
 import { C4ModelController } from "@/services/c4models/controller";
@@ -23,6 +24,8 @@ import type {
     ViewDetailResponse,
     ViewSummaryResponse,
 } from "@/services/c4models/types";
+import { MemberController } from "@/services/members/controller";
+import type { MemberResponse } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
@@ -41,6 +44,8 @@ export function ProjectCanvas({
     initialViews,
     initialApiKeys,
 }: ProjectCanvasProps) {
+    console.log(typeof organizationId);
+
     const [nodes, setNodes, onNodesChange] = useNodesState<Node<C4NodeData>>(
         [],
     );
@@ -51,7 +56,10 @@ export function ProjectCanvas({
     );
     const [apiKeys, setApiKeys] =
         useState<ProjectApiKeyResponse[]>(initialApiKeys);
+    const [members, setMembers] = useState<MemberResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
 
     // Load a specific view's detail and layout
     async function loadView(viewId: string): Promise<void> {
@@ -106,6 +114,15 @@ export function ProjectCanvas({
         setIsLoading(false);
     }, [initialViews, c4Model, setNodes, setEdges]);
 
+    // Load organization members on mount
+    useEffect(() => {
+        MemberController.getAll(organizationId)
+            .then(setMembers)
+            .catch(() => {
+                toast.error("Failed to load organization members");
+            });
+    }, [organizationId]);
+
     // Persist node position on drag end
     function handleNodeDragStop(
         _event: React.MouseEvent,
@@ -122,12 +139,17 @@ export function ProjectCanvas({
     }
 
     // API key handlers
-    async function handleCreateApiKey(): Promise<void> {
+    function handleOpenCreateModal(): void {
+        setIsModalOpen(true);
+    }
+
+    async function handleCreateApiKey(memberId: string): Promise<void> {
+        setIsCreatingApiKey(true);
         try {
             const result = await ProjectApiKeyController.create(
                 organizationId,
                 projectId,
-                { targetMemberId: "" },
+                { targetMemberId: memberId },
             );
             toast.success("API key created", {
                 description: `Key: ${result.apiKey}`,
@@ -138,8 +160,11 @@ export function ProjectCanvas({
                 projectId,
             );
             setApiKeys(updatedKeys);
+            setIsModalOpen(false);
         } catch {
             toast.error("Failed to create API key");
+        } finally {
+            setIsCreatingApiKey(false);
         }
     }
 
@@ -166,8 +191,16 @@ export function ProjectCanvas({
                 activeViewId={activeViewId}
                 onViewSelect={loadView}
                 apiKeys={apiKeys}
-                onCreateApiKey={handleCreateApiKey}
+                onCreateApiKey={handleOpenCreateModal}
                 onRevokeApiKey={handleRevokeApiKey}
+            />
+
+            <CreateApiKeyModal
+                open={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                members={members}
+                onCreateApiKey={handleCreateApiKey}
+                isLoading={isCreatingApiKey}
             />
 
             <ReactFlow

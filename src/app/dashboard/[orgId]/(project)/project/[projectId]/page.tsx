@@ -1,14 +1,13 @@
-import { notFound } from "next/navigation";
 import { ProjectCanvas } from "@/components/project/project-canvas";
 import { C4ModelController } from "@/services/c4models/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
 interface ProjectPageProps {
-    params: Promise<{ projectId: string }>;
+    params: Promise<{ projectId: string; orgId: string }>;
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
-    const { projectId } = await params;
+    const { projectId, orgId } = await params;
 
     const [c4ModelResponse, views] = await Promise.all([
         C4ModelController.get(projectId),
@@ -23,7 +22,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     return (
         <ProjectCanvas
             projectId={projectId}
-            organizationId=""
+            organizationId={orgId}
             c4Model={c4ModelResponse}
             initialViews={views}
             initialApiKeys={apiKeys}
