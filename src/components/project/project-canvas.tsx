@@ -18,7 +18,7 @@ import {
     ApiKeysSheet,
     type ApiKeyWithFull,
 } from "@/components/project/api-keys-sheet";
-import { c4NodeTypes } from "@/components/project/c4-nodes";
+import { c4NodeTypes, NODE_STYLES } from "@/components/project/c4-nodes";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
 import { ProjectSidebar } from "@/components/project/project-sidebar";
@@ -293,7 +293,10 @@ export function ProjectCanvas({
                     position="bottom-left"
                     className="!bg-background/80 !border-border !shadow-sm"
                     maskColor="hsl(var(--background) / 0.6)"
-                    nodeColor="hsl(var(--primary) / 0.4)"
+                    nodeColor={(node) => {
+                        const nodeType = (node.data as C4NodeData)?.nodeType;
+                        return nodeType ? NODE_STYLES[nodeType].bg : "#438DD5";
+                    }}
                     style={{ marginLeft: "18rem" }}
                 />
             </ReactFlow>

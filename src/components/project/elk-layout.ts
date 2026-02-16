@@ -9,23 +9,23 @@ import type {
 const elk = new ELK();
 
 const NODE_WIDTH: Record<NodeType, number> = {
-    PERSON: 160,
-    SYSTEM: 220,
-    EXTERNAL_SYSTEM: 220,
-    DATABASE: 180,
-    WEB_APP: 200,
-    CONTAINER: 200,
-    COMPONENT: 180,
+    PERSON: 200,
+    SYSTEM: 240,
+    EXTERNAL_SYSTEM: 240,
+    DATABASE: 200,
+    WEB_APP: 220,
+    CONTAINER: 220,
+    COMPONENT: 200,
 };
 
 const NODE_HEIGHT: Record<NodeType, number> = {
-    PERSON: 120,
-    SYSTEM: 100,
-    EXTERNAL_SYSTEM: 100,
-    DATABASE: 100,
-    WEB_APP: 100,
-    CONTAINER: 100,
-    COMPONENT: 80,
+    PERSON: 170,
+    SYSTEM: 120,
+    EXTERNAL_SYSTEM: 120,
+    DATABASE: 140,
+    WEB_APP: 140,
+    CONTAINER: 120,
+    COMPONENT: 120,
 };
 
 export interface C4NodeData {
