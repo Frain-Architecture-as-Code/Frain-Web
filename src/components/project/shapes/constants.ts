@@ -8,13 +8,13 @@ export const NODE_STYLES: Record<
     NodeType,
     { bg: string; stroke: string; text: string }
 > = {
-    PERSON: { bg: "#08427B", stroke: "#073B6F", text: "#ffffff" },
-    SYSTEM: { bg: "#1168BD", stroke: "#0E5CA8", text: "#ffffff" },
-    EXTERNAL_SYSTEM: { bg: "#999999", stroke: "#8A8A8A", text: "#ffffff" },
+    PERSON: { bg: "#003668", stroke: "#003668", text: "#ffffff" },
+    SYSTEM: { bg: "#0055A4", stroke: "#0055A4", text: "#ffffff" },
+    EXTERNAL_SYSTEM: { bg: "#81788A", stroke: "#81788A", text: "#ffffff" },
     DATABASE: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
     WEB_APP: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
-    CONTAINER: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
-    COMPONENT: { bg: "#85BBF0", stroke: "#78A8DC", text: "#232323" },
+    CONTAINER: { bg: "#0097D1", stroke: "#0097D1", text: "#ffffff" },
+    COMPONENT: { bg: "#50B5ED", stroke: "#50B5ED", text: "#232323" },
 };
 
 /**

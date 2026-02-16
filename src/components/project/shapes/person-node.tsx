@@ -15,9 +15,9 @@ export function PersonNode(props: NodeProps) {
     const w = NODE_WIDTH.PERSON;
     const h = NODE_HEIGHT.PERSON;
 
-    const headR = 30;
+    const headR = 40;
     const headCy = headR + 2;
-    const bodyTop = headCy + headR - 4;
+    const bodyTop = headCy + headR - 10;
     const bodyH = h - bodyTop;
     const bodyR = 20;
 
