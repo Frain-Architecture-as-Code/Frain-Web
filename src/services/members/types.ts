@@ -2,7 +2,11 @@ export interface MemberName {
     value: string;
 }
 
-export type MemberRole = "ADMIN" | "CONTRIBUTOR" | "OWNER";
+export enum MemberRole {
+    ADMIN = "ADMIN",
+    CONTRIBUTOR = "CONTRIBUTOR",
+    OWNER = "OWNER",
+}
 
 export interface UpdateMemberRequest {
     newName?: MemberName;

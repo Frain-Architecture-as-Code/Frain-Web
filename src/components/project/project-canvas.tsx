@@ -30,7 +30,7 @@ import type {
     ViewSummaryResponse,
 } from "@/services/c4models/types";
 import { MemberController } from "@/services/members/controller";
-import type { MemberResponse, MemberRole } from "@/services/members/types";
+import { MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
@@ -72,7 +72,9 @@ export function ProjectCanvas({
     // Derive current user's role from members array
     const currentUserRole = useMemo<MemberRole>(() => {
         const currentMember = members.find((m) => m.userId === currentUserId);
-        return (currentMember?.memberRole as MemberRole) || "CONTRIBUTOR";
+        return (
+            (currentMember?.memberRole as MemberRole) || MemberRole.CONTRIBUTOR
+        );
     }, [members, currentUserId]);
 
     // Check if user can access API keys management
@@ -279,10 +281,9 @@ export function ProjectCanvas({
                 proOptions={{ hideAttribution: true }}
             >
                 <Background
-                    variant={BackgroundVariant.Dots}
-                    gap={20}
+                    variant={BackgroundVariant.Cross}
+                    gap={50}
                     size={1}
-                    color="hsl(var(--muted-foreground) / 0.15)"
                 />
                 <Controls
                     position="bottom-right"
@@ -290,7 +291,7 @@ export function ProjectCanvas({
                     className="!bg-background/80 !border-border !shadow-sm [&>button]:!bg-background [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-muted"
                 />
                 <MiniMap
-                    position="bottom-left"
+                    position="top-right"
                     className="!bg-background/80 !border-border !shadow-sm"
                     maskColor="hsl(var(--background) / 0.6)"
                     nodeColor={(node) => {
