@@ -1,4 +1,5 @@
 import { ProjectCanvas } from "@/components/project/project-canvas";
+import { auth } from "@/lib/auth";
 import { C4ModelController } from "@/services/c4models/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
@@ -8,6 +9,7 @@ interface ProjectPageProps {
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
     const { projectId, orgId } = await params;
+    const session = await auth();
 
     const [c4ModelResponse, views] = await Promise.all([
         C4ModelController.get(projectId),
@@ -23,6 +25,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <ProjectCanvas
             projectId={projectId}
             organizationId={orgId}
+            currentUserId={session?.user?.id || ""}
             c4Model={c4ModelResponse}
             initialViews={views}
             initialApiKeys={apiKeys}

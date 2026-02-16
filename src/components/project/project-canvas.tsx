@@ -12,12 +12,17 @@ import {
     useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+    ApiKeysSheet,
+    type ApiKeyWithFull,
+} from "@/components/project/api-keys-sheet";
 import { c4NodeTypes } from "@/components/project/c4-nodes";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
 import { ProjectSidebar } from "@/components/project/project-sidebar";
+import { canViewAllKeys } from "@/lib/permissions";
 import { C4ModelController } from "@/services/c4models/controller";
 import type {
     C4ModelResponse,
@@ -25,13 +30,14 @@ import type {
     ViewSummaryResponse,
 } from "@/services/c4models/types";
 import { MemberController } from "@/services/members/controller";
-import type { MemberResponse } from "@/services/members/types";
+import type { MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
 interface ProjectCanvasProps {
     projectId: string;
     organizationId: string;
+    currentUserId: string;
     c4Model: C4ModelResponse | null;
     initialViews: ViewSummaryResponse[];
     initialApiKeys: ProjectApiKeyResponse[];
@@ -40,6 +46,7 @@ interface ProjectCanvasProps {
 export function ProjectCanvas({
     projectId,
     organizationId,
+    currentUserId,
     c4Model,
     initialViews,
     initialApiKeys,
@@ -54,12 +61,22 @@ export function ProjectCanvas({
     const [activeViewId, setActiveViewId] = useState<string | null>(
         initialViews[0]?.id ?? null,
     );
-    const [apiKeys, setApiKeys] =
-        useState<ProjectApiKeyResponse[]>(initialApiKeys);
+    const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>(initialApiKeys);
     const [members, setMembers] = useState<MemberResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false);
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
+
+    // Derive current user's role from members array
+    const currentUserRole = useMemo<MemberRole>(() => {
+        const currentMember = members.find((m) => m.userId === currentUserId);
+        return (currentMember?.memberRole as MemberRole) || "CONTRIBUTOR";
+    }, [members, currentUserId]);
+
+    // Check if user can access API keys management
+    const canAccessApiKeys = canViewAllKeys(currentUserRole);
 
     // Load a specific view's detail and layout
     async function loadView(viewId: string): Promise<void> {
@@ -139,8 +156,29 @@ export function ProjectCanvas({
     }
 
     // API key handlers
+    function handleOpenApiKeysModal(): void {
+        setIsApiKeysModalOpen(true);
+        // Refresh API keys when modal opens
+        refreshApiKeys();
+    }
+
+    async function refreshApiKeys(): Promise<void> {
+        setIsApiKeysLoading(true);
+        try {
+            const updatedKeys = await ProjectApiKeyController.list(
+                organizationId,
+                projectId,
+            );
+            setApiKeys(updatedKeys);
+        } catch {
+            toast.error("Failed to load API keys");
+        } finally {
+            setIsApiKeysLoading(false);
+        }
+    }
+
     function handleOpenCreateModal(): void {
-        setIsModalOpen(true);
+        setIsCreateModalOpen(true);
     }
 
     async function handleCreateApiKey(memberId: string): Promise<void> {
@@ -155,12 +193,20 @@ export function ProjectCanvas({
                 description: `Key: ${result.apiKey}`,
                 duration: 10000,
             });
-            const updatedKeys = await ProjectApiKeyController.list(
-                organizationId,
-                projectId,
-            );
-            setApiKeys(updatedKeys);
-            setIsModalOpen(false);
+
+            // Add the newly created key with full key to state
+            const newKeyWithFull: ApiKeyWithFull = {
+                id: result.id,
+                projectId: result.projectId,
+                memberId: result.memberId,
+                apiKeyPrefix: result.apiKey.slice(0, 8), // Extract prefix from full key
+                lastUsedAt: "",
+                createdAt: result.createdAt,
+                fullKey: result.apiKey, // Store the full key
+            };
+
+            setApiKeys((prev) => [newKeyWithFull, ...prev]);
+            setIsCreateModalOpen(false);
         } catch {
             toast.error("Failed to create API key");
         } finally {
@@ -169,16 +215,19 @@ export function ProjectCanvas({
     }
 
     async function handleRevokeApiKey(apiKeyId: string): Promise<void> {
+        // Optimistic update
+        setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));
+
         try {
             await ProjectApiKeyController.revoke(
                 organizationId,
                 projectId,
                 apiKeyId,
             );
-            setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));
-            toast.success("API key revoked");
-        } catch {
-            toast.error("Failed to revoke API key");
+        } catch (error) {
+            // Revert on error
+            await refreshApiKeys();
+            throw error; // Re-throw so modal can handle it
         }
     }
 
@@ -190,15 +239,27 @@ export function ProjectCanvas({
                 views={views}
                 activeViewId={activeViewId}
                 onViewSelect={loadView}
+                canAccessApiKeys={canAccessApiKeys}
+                onOpenApiKeysModal={handleOpenApiKeysModal}
+            />
+
+            <ApiKeysSheet
+                open={isApiKeysModalOpen}
+                onOpenChange={setIsApiKeysModalOpen}
                 apiKeys={apiKeys}
+                members={members}
+                currentUserId={currentUserId}
+                currentUserRole={currentUserRole}
                 onCreateApiKey={handleOpenCreateModal}
                 onRevokeApiKey={handleRevokeApiKey}
+                isLoading={isApiKeysLoading}
             />
 
             <CreateApiKeyModal
-                open={isModalOpen}
-                onOpenChange={setIsModalOpen}
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
                 members={members}
+                currentUserRole={currentUserRole}
                 onCreateApiKey={handleCreateApiKey}
                 isLoading={isCreatingApiKey}
             />

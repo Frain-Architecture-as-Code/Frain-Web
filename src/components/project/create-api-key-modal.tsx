@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Command,
@@ -24,13 +24,15 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { filterAvailableMembers } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import type { MemberResponse } from "@/services/members/types";
+import type { MemberResponse, MemberRole } from "@/services/members/types";
 
 interface CreateApiKeyModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     members: MemberResponse[];
+    currentUserRole: MemberRole;
     onCreateApiKey: (memberId: string) => void;
     isLoading?: boolean;
 }
@@ -39,11 +41,18 @@ export function CreateApiKeyModal({
     open,
     onOpenChange,
     members,
+    currentUserRole,
     onCreateApiKey,
     isLoading = false,
 }: CreateApiKeyModalProps) {
     const [selectedMemberId, setSelectedMemberId] = useState<string>("");
     const [comboboxOpen, setComboboxOpen] = useState(false);
+
+    // Filter members based on current user's role
+    const availableMembers = useMemo(
+        () => filterAvailableMembers(members, currentUserRole),
+        [members, currentUserRole],
+    );
 
     function handleCreate(): void {
         if (!selectedMemberId) return;
@@ -56,7 +65,9 @@ export function CreateApiKeyModal({
         onOpenChange(false);
     }
 
-    const selectedMember = members.find((m) => m.memberId === selectedMemberId);
+    const selectedMember = availableMembers.find(
+        (m) => m.memberId === selectedMemberId,
+    );
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,6 +77,12 @@ export function CreateApiKeyModal({
                     <DialogDescription>
                         Select a member to create an API key for. The key will
                         be shown only once after creation.
+                        {currentUserRole === "ADMIN" && (
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                                As an admin, you can only create keys for
+                                contributors.
+                            </span>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -77,11 +94,15 @@ export function CreateApiKeyModal({
                                 role="combobox"
                                 aria-expanded={comboboxOpen}
                                 className="w-full justify-between"
-                                disabled={isLoading}
+                                disabled={
+                                    isLoading || availableMembers.length === 0
+                                }
                             >
                                 {selectedMember
                                     ? selectedMember.memberName
-                                    : "Select member..."}
+                                    : availableMembers.length === 0
+                                      ? "No members available"
+                                      : "Select member..."}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
@@ -93,7 +114,7 @@ export function CreateApiKeyModal({
                                         No member found.
                                     </CommandEmpty>
                                     <CommandGroup>
-                                        {members.map((member) => (
+                                        {availableMembers.map((member) => (
                                             <CommandItem
                                                 key={member.memberId}
                                                 value={member.memberName}
