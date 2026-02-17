@@ -15,6 +15,10 @@ export default async function MembersPage({ params }: MembersPageProps) {
     ]);
 
     return (
-        <MemberList members={members} organizationName={organization.name} />
+        <MemberList
+            members={members}
+            organizationName={organization.name}
+            orgId={orgId}
+        />
     );
 }

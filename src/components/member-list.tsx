@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, Crown, Shield, User, Users } from "lucide-react";
+import { SendInvitationDialog } from "@/components/send-invitation-dialog";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,20 +44,25 @@ function RoleBadge({ role }: { role: string }) {
 export function MemberList({
     members,
     organizationName,
+    orgId,
 }: {
     members: MemberResponse[];
     organizationName: string;
+    orgId: string;
 }) {
     return (
         <div className="space-y-6">
             <BlurFade delay={0.05}>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        Members
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        People in {organizationName}.
-                    </p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Members
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            People in {organizationName}.
+                        </p>
+                    </div>
+                    <SendInvitationDialog orgId={orgId} />
                 </div>
             </BlurFade>
 

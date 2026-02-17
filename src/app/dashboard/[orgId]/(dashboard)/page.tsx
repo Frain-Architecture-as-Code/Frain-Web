@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, FolderKanban, Globe, Lock, Mail, Users } from "lucide-react";
+import { Calendar, FolderKanban, Globe, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -30,12 +30,6 @@ export default function OrgOverviewPage() {
             value: "5",
             icon: Users,
             href: `/dashboard/${organization.organizationId}/members`,
-        },
-        {
-            title: "Invitations",
-            value: "2",
-            icon: Mail,
-            href: `/dashboard/${organization.organizationId}/invitations`,
         },
     ];
 
@@ -68,7 +62,7 @@ export default function OrgOverviewPage() {
                 </div>
             </BlurFade>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
                 {stats.map((stat, index) => (
                     <BlurFade key={stat.title} delay={0.1 + index * 0.05}>
                         <Link href={stat.href}>
