@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -36,12 +36,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { C4ModelController } from "@/services/c4models/controller";
+import type { GetProjectDetailsResponse } from "@/services/c4models/types";
 import { ProjectController } from "@/services/projects/controller";
 import type {
     ProjectResponse,
     ProjectVisibility,
 } from "@/services/projects/types";
-import { C4ModelController } from "@/services/c4models/controller";
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -142,7 +143,13 @@ function CreateProjectDialog({ organizationId }: { organizationId: string }) {
     );
 }
 
-function ProjectListItem({ project }: { project: ProjectResponse }) {
+function ProjectListItem({
+    project,
+    projectDetails,
+}: {
+    project: ProjectResponse;
+    projectDetails: GetProjectDetailsResponse | null;
+}) {
     return (
         <Card className="transition-colors hover:bg-muted/50">
             <CardContent className="flex items-center justify-between py-4">
@@ -151,7 +158,14 @@ function ProjectListItem({ project }: { project: ProjectResponse }) {
                         <FolderKanban className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium leading-none"></p>
+                        <p className="text-sm font-medium leading-none">
+                            {projectDetails?.title || project.projectId}
+                        </p>
+                        {projectDetails?.description && (
+                            <p className="mt-1 text-xs text-muted-foreground line-clamp-1">
+                                {projectDetails.description}
+                            </p>
+                        )}
                         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             <span>Created {formatDate(project.createdAt)}</span>
@@ -174,7 +188,13 @@ function ProjectListItem({ project }: { project: ProjectResponse }) {
     );
 }
 
-function ProjectGridItem({ project }: { project: ProjectResponse }) {
+function ProjectGridItem({
+    project,
+    projectDetails,
+}: {
+    project: ProjectResponse;
+    projectDetails: GetProjectDetailsResponse | null;
+}) {
     return (
         <Card className="transition-colors hover:bg-muted/50">
             <CardContent className="space-y-3 pt-6">
@@ -195,8 +215,15 @@ function ProjectGridItem({ project }: { project: ProjectResponse }) {
                     </div>
                 </div>
                 <div>
-                    <p className="font-medium">{project.projectId}</p>
-                    <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <p className="font-medium">
+                        {projectDetails?.title || project.projectId}
+                    </p>
+                    {projectDetails?.description && (
+                        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                            {projectDetails.description}
+                        </p>
+                    )}
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         <span>Created {formatDate(project.createdAt)}</span>
                     </div>
@@ -218,6 +245,39 @@ export function ProjectList({
     organizationName: string;
 }) {
     const [viewMode, setViewMode] = useState<ViewMode>("list");
+    const [projectDetailsMap, setProjectDetailsMap] = useState<
+        Map<string, GetProjectDetailsResponse>
+    >(new Map());
+
+    useEffect(() => {
+        async function fetchProjectDetails() {
+            const detailsMap = new Map<string, GetProjectDetailsResponse>();
+
+            await Promise.all(
+                projects.map(async (project) => {
+                    try {
+                        const details =
+                            await C4ModelController.getProjectDetails(
+                                project.projectId,
+                            );
+                        detailsMap.set(project.projectId, details);
+                    } catch (error) {
+                        // Silently fail - will fall back to projectId
+                        console.error(
+                            `Failed to fetch details for project ${project.projectId}:`,
+                            error,
+                        );
+                    }
+                }),
+            );
+
+            setProjectDetailsMap(detailsMap);
+        }
+
+        if (projects.length > 0) {
+            fetchProjectDetails();
+        }
+    }, [projects]);
 
     return (
         <div className="space-y-6">
@@ -267,7 +327,14 @@ export function ProjectList({
                                 key={project.projectId}
                                 delay={0.1 + index * 0.05}
                             >
-                                <ProjectListItem project={project} />
+                                <ProjectListItem
+                                    project={project}
+                                    projectDetails={
+                                        projectDetailsMap.get(
+                                            project.projectId,
+                                        ) || null
+                                    }
+                                />
                             </BlurFade>
                         ))}
                     </div>
@@ -278,7 +345,14 @@ export function ProjectList({
                                 key={project.projectId}
                                 delay={0.1 + index * 0.05}
                             >
-                                <ProjectGridItem project={project} />
+                                <ProjectGridItem
+                                    project={project}
+                                    projectDetails={
+                                        projectDetailsMap.get(
+                                            project.projectId,
+                                        ) || null
+                                    }
+                                />
                             </BlurFade>
                         ))}
                     </div>
