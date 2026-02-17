@@ -11,18 +11,9 @@ import { InvitationController } from "@/services/invitations/controller";
 import { NotificationController } from "@/services/notifications/controller";
 import {
     type NotificationResponse,
+    NotificationStatus,
     NotificationType,
 } from "@/services/notifications/types";
-
-function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-}
 
 function NotificationCard({
     notification,
@@ -40,7 +31,7 @@ function NotificationCard({
             await InvitationController.accept(notification.resourceId);
             await NotificationController.updateStatus(
                 notification.notificationId,
-                { newStatus: "READ" },
+                { newStatus: NotificationStatus.READ },
             );
             toast.success("Invitation accepted!");
             onUpdate();
@@ -57,7 +48,7 @@ function NotificationCard({
             await InvitationController.decline(notification.resourceId);
             await NotificationController.updateStatus(
                 notification.notificationId,
-                { newStatus: "READ" },
+                { newStatus: NotificationStatus.READ },
             );
             toast.success("Invitation declined");
             onUpdate();
@@ -68,20 +59,14 @@ function NotificationCard({
         }
     }
 
-    const isUnread = notification.status === "UNREAD";
+    const isUnread = notification.status === NotificationStatus.UNREAD;
     const isInvitation = notification.type === NotificationType.INVITATION;
 
     return (
-        <Card
-            className={`transition-colors ${isUnread ? "border-primary/50" : ""}`}
-        >
+        <Card>
             <CardContent className="py-4">
                 <div className="flex items-start gap-3">
-                    <div
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                            isUnread ? "bg-primary/10" : "bg-muted"
-                        }`}
-                    >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
                         {isInvitation ? (
                             <Mail
                                 className={`h-4 w-4 ${isUnread ? "text-primary" : "text-muted-foreground"}`}
@@ -101,7 +86,9 @@ function NotificationCard({
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     From {notification.senderEmail} •{" "}
-                                    {formatDate(notification.createdAt)}
+                                    {new Date(
+                                        notification.createdAt,
+                                    ).toDateString()}
                                 </p>
                             </div>
                             {isUnread && (
