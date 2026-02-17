@@ -76,3 +76,9 @@ export interface UpdateNodePositionRequest {
     x: number;
     y: number;
 }
+
+export interface GetProjectDetailsResponse {
+    title: string;
+    description: string;
+    updatedAt: string;
+}

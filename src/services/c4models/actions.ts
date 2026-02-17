@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import type {
     C4Model,
     C4ModelResponse,
+    GetProjectDetailsResponse,
     UpdateNodePositionRequest,
     ViewDetailResponse,
     ViewSummaryResponse,
@@ -55,6 +56,13 @@ export async function updateNodePosition(
     const { data } = await api.patch<ViewDetailResponse>(
         `/api/v1/c4models/projects/${projectId}/views/${viewId}/nodes/${nodeId}`,
         request,
+    );
+    return data;
+}
+
+export async function getProjectDetails(projectId: string) {
+    const { data } = await api.get<GetProjectDetailsResponse>(
+        `/api/v1/c4models/projects/${projectId}/details`,
     );
     return data;
 }

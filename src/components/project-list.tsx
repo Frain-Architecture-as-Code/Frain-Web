@@ -41,6 +41,7 @@ import type {
     ProjectResponse,
     ProjectVisibility,
 } from "@/services/projects/types";
+import { C4ModelController } from "@/services/c4models/controller";
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -150,9 +151,7 @@ function ProjectListItem({ project }: { project: ProjectResponse }) {
                         <FolderKanban className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium leading-none">
-                            {project.projectId}
-                        </p>
+                        <p className="text-sm font-medium leading-none"></p>
                         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             <span>Created {formatDate(project.createdAt)}</span>

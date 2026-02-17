@@ -21,6 +21,7 @@ import {
 import { c4NodeTypes, NODE_STYLES } from "@/components/project/c4-nodes";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
+import { FloatingEdge } from "@/components/project/floating-edge";
 import { ProjectSidebar } from "@/components/project/project-sidebar";
 import { canViewAllKeys } from "@/lib/permissions";
 import { C4ModelController } from "@/services/c4models/controller";
@@ -30,7 +31,7 @@ import type {
     ViewSummaryResponse,
 } from "@/services/c4models/types";
 import { MemberController } from "@/services/members/controller";
-import { MemberResponse, MemberRole } from "@/services/members/types";
+import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
@@ -42,6 +43,10 @@ interface ProjectCanvasProps {
     initialViews: ViewSummaryResponse[];
     initialApiKeys: ProjectApiKeyResponse[];
 }
+
+const edgeTypes = {
+    floating: FloatingEdge,
+};
 
 export function ProjectCanvas({
     projectId,
@@ -273,6 +278,7 @@ export function ProjectCanvas({
                 onEdgesChange={onEdgesChange}
                 onNodeDragStop={handleNodeDragStop}
                 nodeTypes={c4NodeTypes}
+                edgeTypes={edgeTypes}
                 colorMode="dark"
                 fitView
                 fitViewOptions={{ padding: 0.2 }}

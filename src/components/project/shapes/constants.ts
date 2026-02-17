@@ -14,7 +14,7 @@ export const NODE_STYLES: Record<
     DATABASE: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
     WEB_APP: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
     CONTAINER: { bg: "#0097D1", stroke: "#0097D1", text: "#ffffff" },
-    COMPONENT: { bg: "#50B5ED", stroke: "#50B5ED", text: "#232323" },
+    COMPONENT: { bg: "#50B5ED", stroke: "#50B5ED", text: "#ffffff" },
 };
 
 /**

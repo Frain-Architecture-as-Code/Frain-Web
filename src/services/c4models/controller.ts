@@ -1,5 +1,6 @@
 import {
     getC4Model,
+    getProjectDetails,
     getViewDetail,
     getViewSummaries,
     updateC4Model,
@@ -8,6 +9,7 @@ import {
 import type {
     C4Model,
     C4ModelResponse,
+    GetProjectDetailsResponse,
     UpdateNodePositionRequest,
     ViewDetailResponse,
     ViewSummaryResponse,
@@ -45,5 +47,11 @@ export class C4ModelController {
         request: UpdateNodePositionRequest,
     ): Promise<ViewDetailResponse> {
         return updateNodePosition(projectId, viewId, nodeId, request);
+    }
+
+    static async getProjectDetails(
+        projectId: string,
+    ): Promise<GetProjectDetailsResponse> {
+        return getProjectDetails(projectId);
     }
 }

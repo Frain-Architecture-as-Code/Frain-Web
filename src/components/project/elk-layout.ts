@@ -74,7 +74,7 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
         source: relation.sourceId,
         target: relation.targetId,
         label: relation.description,
-        type: "straight",
+        type: "floating",
         animated: false,
         markerEnd: {
             type: "arrowclosed",
@@ -84,7 +84,8 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
         },
         style: {
             stroke: "#C5C5C5",
-            strokeWidth: 0.5,
+            strokeWidth: 0.75,
+            strokeDasharray: "5 5",
         },
         labelStyle: {
             fontSize: 11,
@@ -92,7 +93,7 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
             fontWeight: 500,
         },
         labelBgStyle: {
-            fill: "#141414",
+            fill: "hsl(var(--background))",
             fillOpacity: 1,
         },
         labelBgPadding: [8, 4] as [number, number],
