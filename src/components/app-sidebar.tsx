@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, LayoutDashboard, User } from "lucide-react";
+import { Bell, Building2, LayoutDashboard, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -26,6 +26,11 @@ const navigation = [
         title: "Organizations",
         href: "/dashboard/organizations",
         icon: Building2,
+    },
+    {
+        title: "Notifications",
+        href: "/dashboard/notifications",
+        icon: Bell,
     },
     {
         title: "Profile",

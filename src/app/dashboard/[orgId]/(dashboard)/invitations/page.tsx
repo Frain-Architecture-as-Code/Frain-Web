@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar, Clock, Mail, Plus, Shield, User } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
@@ -25,51 +25,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useOrg } from "@/contexts/org-context";
-import type {
-    InvitationResponse,
-    InvitationRole,
-} from "@/services/invitations/types";
-
-const sampleInvitations: InvitationResponse[] = [
-    {
-        invitationId: "inv-1",
-        targetEmail: "new.member@example.com",
-        status: "PENDING",
-        role: "CONTRIBUTOR",
-        organizationId: "org-1",
-        inviterId: "member-1",
-        createdAt: "2026-02-10T14:00:00Z",
-        updatedAt: "2026-02-10T14:00:00Z",
-    },
-    {
-        invitationId: "inv-2",
-        targetEmail: "admin@example.com",
-        status: "ACCEPTED",
-        role: "ADMIN",
-        organizationId: "org-1",
-        inviterId: "member-1",
-        createdAt: "2026-02-05T09:30:00Z",
-        updatedAt: "2026-02-06T10:15:00Z",
-    },
-    {
-        invitationId: "inv-3",
-        targetEmail: "declined@example.com",
-        status: "DECLINED",
-        role: "CONTRIBUTOR",
-        organizationId: "org-1",
-        inviterId: "member-2",
-        createdAt: "2026-02-01T16:00:00Z",
-        updatedAt: "2026-02-02T08:45:00Z",
-    },
-];
-
-function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    });
-}
+import { InvitationRole } from "@/services/invitations/types";
+import { InvitationController } from "@/services/invitations/controller";
 
 function StatusBadge({ status }: { status: string }) {
     switch (status) {
@@ -112,16 +69,20 @@ function RoleLabel({ role }: { role: string }) {
     }
 }
 
-function SendInvitationDialog() {
+function SendInvitationDialog({ orgId }: { orgId: string }) {
     const [open, setOpen] = useState(false);
     const [email, setEmail] = useState("");
-    const [role, setRole] = useState<InvitationRole>("CONTRIBUTOR");
+    const [role, setRole] = useState<InvitationRole>(
+        InvitationRole.CONTRIBUTOR,
+    );
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     function handleSubmit(event: React.FormEvent) {
         event.preventDefault();
 
         if (!email.trim()) return;
+
+        InvitationController.send(orgId, { role, targetEmail: email });
 
         setIsSubmitting(true);
 
@@ -130,7 +91,7 @@ function SendInvitationDialog() {
             setIsSubmitting(false);
             setOpen(false);
             setEmail("");
-            setRole("CONTRIBUTOR");
+            setRole(InvitationRole.CONTRIBUTOR);
         }, 500);
     }
 
@@ -213,65 +174,29 @@ export default function InvitationsPage() {
                             Manage invitations for {organization.name}.
                         </p>
                     </div>
-                    <SendInvitationDialog />
+                    <SendInvitationDialog orgId={organization.organizationId} />
                 </div>
             </BlurFade>
 
-            {sampleInvitations.length > 0 ? (
-                <div className="grid gap-3">
-                    {sampleInvitations.map((invitation, index) => (
-                        <BlurFade
-                            key={invitation.invitationId}
-                            delay={0.1 + index * 0.05}
-                        >
-                            <Card className="transition-colors hover:bg-muted/50">
-                                <CardContent className="flex items-center justify-between py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                                            <Mail className="h-4 w-4 text-primary" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium leading-none">
-                                                {invitation.targetEmail}
-                                            </p>
-                                            <div className="mt-1.5 flex items-center gap-2">
-                                                <RoleLabel
-                                                    role={invitation.role}
-                                                />
-                                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                    <Calendar className="h-3 w-3" />
-                                                    {formatDate(
-                                                        invitation.createdAt,
-                                                    )}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <StatusBadge status={invitation.status} />
-                                </CardContent>
-                            </Card>
-                        </BlurFade>
-                    ))}
-                </div>
-            ) : (
-                <BlurFade delay={0.1}>
-                    <Card className="border-dashed">
-                        <CardContent className="flex flex-col items-center justify-center py-12">
-                            <div className="mb-4 rounded-full bg-muted p-3">
-                                <Mail className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <p className="mb-1 text-sm font-semibold">
-                                No invitations yet
-                            </p>
-                            <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
-                                Invite people to join your organization and
-                                collaborate on projects.
-                            </p>
-                            <SendInvitationDialog />
-                        </CardContent>
-                    </Card>
-                </BlurFade>
-            )}
+            <BlurFade delay={0.1}>
+                <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                        <div className="mb-4 rounded-full bg-muted p-3">
+                            <Mail className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="mb-1 text-sm font-semibold">
+                            No invitations yet
+                        </p>
+                        <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
+                            Invite people to join your organization and
+                            collaborate on projects.
+                        </p>
+                        <SendInvitationDialog
+                            orgId={organization.organizationId}
+                        />
+                    </CardContent>
+                </Card>
+            </BlurFade>
         </div>
     );
 }
