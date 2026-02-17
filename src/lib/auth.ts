@@ -4,6 +4,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
+import { generateBackendToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -66,12 +67,24 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
+
+                // Generate a jose-signed JWT (HS256) for the Spring Boot backend.
+                // This runs only once per login — the token is persisted inside
+                // the NextAuth session JWT for the lifetime of the session.
+                token.backendToken = await generateBackendToken({
+                    userId: user.id as string,
+                    email: user.email as string,
+                    username: (user.name ?? user.email) as string,
+                });
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user && token.id) {
                 session.user.id = token.id as string;
+            }
+            if (token.backendToken) {
+                session.backendToken = token.backendToken as string;
             }
             return session;
         },

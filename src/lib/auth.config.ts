@@ -38,11 +38,16 @@ export const authConfig = {
             if (user) {
                 token.id = user.id;
             }
+            // backendToken is generated in auth.ts (Node.js runtime) during login.
+            // It persists inside the NextAuth JWT automatically — no action needed here.
             return token;
         },
         async session({ session, token }) {
             if (session.user && token.id) {
                 session.user.id = token.id as string;
+            }
+            if (token.backendToken) {
+                session.backendToken = token.backendToken as string;
             }
             return session;
         },

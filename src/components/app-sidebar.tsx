@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderKanban, LayoutDashboard, Settings } from "lucide-react";
+import { Building2, LayoutDashboard, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -23,14 +23,14 @@ const navigation = [
         icon: LayoutDashboard,
     },
     {
-        title: "Projects",
-        href: "/dashboard/projects",
-        icon: FolderKanban,
+        title: "Organizations",
+        href: "/dashboard/organizations",
+        icon: Building2,
     },
     {
-        title: "Settings",
-        href: "/dashboard/settings",
-        icon: Settings,
+        title: "Profile",
+        href: "/dashboard/profile",
+        icon: User,
     },
 ] as const;
 
