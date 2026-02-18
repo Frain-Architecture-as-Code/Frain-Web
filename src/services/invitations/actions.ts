@@ -16,13 +16,10 @@ export async function sendInvitation(
     organizationId: string,
     request: SendInvitationRequest,
 ): Promise<InvitationResponse> {
-    console.log("----- Payload", request);
     const { data } = await api.post<InvitationResponse>(
         `/api/v1/organizations/${organizationId}/invitations`,
         request,
     );
-
-    console.log("Response", data);
     return data;
 }
 

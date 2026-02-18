@@ -145,15 +145,6 @@ export function CreateApiKeyModal({
                                                     setComboboxOpen(false);
                                                 }}
                                             >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4",
-                                                        selectedMemberId ===
-                                                            member.memberId
-                                                            ? "opacity-100"
-                                                            : "opacity-0",
-                                                    )}
-                                                />
                                                 <Avatar className="mr-2 h-6 w-6">
                                                     <AvatarImage
                                                         src={
@@ -177,6 +168,16 @@ export function CreateApiKeyModal({
                                                         {member.memberRole}
                                                     </span>
                                                 </div>
+
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        selectedMemberId ===
+                                                            member.memberId
+                                                            ? "opacity-100"
+                                                            : "opacity-0",
+                                                    )}
+                                                />
                                             </CommandItem>
                                         ))}
                                     </CommandGroup>

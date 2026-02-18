@@ -146,7 +146,6 @@ export function ApiKeysSheet({
     }
 
     function renderKeyDisplay(key: ApiKeyWithFull): React.ReactNode {
-        console.log("KEY", key);
         return (
             <span className="font-mono text-xs">
                 {key.apiKeyPrefix.slice(0, 16)}...

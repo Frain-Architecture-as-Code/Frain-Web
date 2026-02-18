@@ -56,8 +56,6 @@ export function ProjectCanvas({
     initialViews,
     initialApiKeys,
 }: ProjectCanvasProps) {
-    console.log(typeof organizationId);
-
     const [nodes, setNodes, onNodesChange] = useNodesState<Node<C4NodeData>>(
         [],
     );
