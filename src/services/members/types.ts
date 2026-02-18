@@ -19,6 +19,7 @@ export interface MemberResponse {
     organizationId: string;
     memberName: string;
     memberRole: string;
+    picture: string;
     createdAt: string;
     updatedAt: string;
 }
