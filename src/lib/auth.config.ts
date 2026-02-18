@@ -43,11 +43,15 @@ export const authConfig = {
             return token;
         },
         async session({ session, token }) {
+            console.log("TOKEN", token);
             if (session.user && token.id) {
                 session.user.id = token.id as string;
             }
             if (token.backendToken) {
                 session.backendToken = token.backendToken as string;
+            }
+            if (token.profileUrl) {
+                session.picture = token.profileUrl as string;
             }
             return session;
         },

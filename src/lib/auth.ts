@@ -75,6 +75,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     userId: user.id as string,
                     email: user.email as string,
                     username: (user.name ?? user.email) as string,
+                    profileUrl: token.picture ?? "",
                 });
             }
             return token;
@@ -85,6 +86,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             if (token.backendToken) {
                 session.backendToken = token.backendToken as string;
+            }
+            if (token.picture) {
+                session.picture = token.picture as string;
             }
             return session;
         },
