@@ -1,4 +1,5 @@
 import { MemberList } from "@/components/member-list";
+import { auth } from "@/lib/auth";
 import { MemberController } from "@/services/members/controller";
 import { OrganizationController } from "@/services/organizations/controller";
 
@@ -9,9 +10,10 @@ interface MembersPageProps {
 export default async function MembersPage({ params }: MembersPageProps) {
     const { orgId } = await params;
 
-    const [members, organization] = await Promise.all([
+    const [members, organization, session] = await Promise.all([
         MemberController.getAll(orgId),
         OrganizationController.getById(orgId),
+        auth(),
     ]);
 
     return (
@@ -19,6 +21,7 @@ export default async function MembersPage({ params }: MembersPageProps) {
             members={members}
             organizationName={organization.name}
             orgId={orgId}
+            currentUserId={session?.user?.id ?? ""}
         />
     );
 }

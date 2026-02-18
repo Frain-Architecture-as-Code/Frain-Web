@@ -1,4 +1,4 @@
-import { getMembers, updateMember } from "./actions";
+import { getMembers, kickMember, updateMember } from "./actions";
 import type { MemberResponse, UpdateMemberRequest } from "./types";
 
 export class MemberController {
@@ -12,5 +12,12 @@ export class MemberController {
         request: UpdateMemberRequest,
     ): Promise<MemberResponse> {
         return updateMember(organizationId, memberId, request);
+    }
+
+    static async kick(
+        organizationId: string,
+        memberId: string,
+    ): Promise<{ value: string }> {
+        return kickMember(organizationId, memberId);
     }
 }

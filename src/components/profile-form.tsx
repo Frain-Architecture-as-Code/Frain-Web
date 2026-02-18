@@ -1,17 +1,9 @@
 "use client";
 
-import { Camera, Save } from "lucide-react";
+import { Camera, Save, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-    CldUploadWidget,
-    type CloudinaryUploadWidgetResults,
-} from "next-cloudinary";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-    updateAvatarAction,
-    updateProfileAction,
-} from "@/services/auth/actions/profile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -23,8 +15,18 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+    updateAvatarAction,
+    updateProfileAction,
+} from "@/services/auth/actions/profile";
 
 interface ProfileFormProps {
     user: {
@@ -49,11 +51,36 @@ function getInitials(name: string, email: string): string {
     return "U";
 }
 
+async function uploadToCloudinary(file: File): Promise<string> {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    if (!cloudName) {
+        throw new Error("Cloudinary cloud name is not configured.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "frain_avatars");
+
+    const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: formData },
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to upload image.");
+    }
+
+    const data = await response.json();
+    return data.secure_url as string;
+}
+
 export function ProfileForm({ user }: ProfileFormProps) {
     const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [name, setName] = useState(user.name);
     const [avatarUrl, setAvatarUrl] = useState(user.image);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     const hasNameChanged = name !== user.name;
 
@@ -78,20 +105,61 @@ export function ProfileForm({ user }: ProfileFormProps) {
         setIsSaving(false);
     }
 
-    async function handleAvatarUpload(result: CloudinaryUploadWidgetResults) {
-        if (typeof result.info === "string" || !result.info?.secure_url) return;
-        const url = result.info.secure_url;
+    async function handleFileSelected(
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) {
+        const file = event.target.files?.[0];
+        if (!file) return;
 
-        setAvatarUrl(url);
-        const updateResult = await updateAvatarAction(url);
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please select an image file.");
+            return;
+        }
 
-        if (updateResult.error) {
-            toast.error(updateResult.error);
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image must be smaller than 5MB.");
+            return;
+        }
+
+        setIsUploading(true);
+
+        try {
+            const url = await uploadToCloudinary(file);
+            setAvatarUrl(url);
+
+            const result = await updateAvatarAction(url);
+            if (result.error) {
+                toast.error(result.error);
+                setAvatarUrl(user.image);
+            } else {
+                toast.success("Avatar updated successfully.");
+                router.refresh();
+            }
+        } catch {
+            toast.error("Failed to upload avatar. Please try again.");
+            setAvatarUrl(user.image);
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    }
+
+    async function handleRemoveAvatar() {
+        setIsUploading(true);
+        setAvatarUrl(null);
+
+        const result = await updateAvatarAction("");
+        if (result.error) {
+            toast.error(result.error);
             setAvatarUrl(user.image);
         } else {
-            toast.success("Avatar updated successfully.");
+            toast.success("Avatar removed.");
             router.refresh();
         }
+
+        setIsUploading(false);
     }
 
     return (
@@ -116,20 +184,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <CldUploadWidget
-                            uploadPreset="frain_avatars"
-                            options={{
-                                maxFiles: 1,
-                                cropping: true,
-                                croppingAspectRatio: 1,
-                                sources: ["local", "url", "camera"],
-                            }}
-                            onSuccess={handleAvatarUpload}
-                        >
-                            {({ open }) => (
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFileSelected}
+                        />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild disabled={isUploading}>
                                 <button
                                     type="button"
-                                    onClick={() => open()}
                                     className="group relative"
                                 >
                                     <Avatar className="h-20 w-20">
@@ -145,8 +210,32 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                         <Camera className="h-5 w-5 text-white" />
                                     </div>
                                 </button>
-                            )}
-                        </CldUploadWidget>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                >
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload photo
+                                </DropdownMenuItem>
+                                {avatarUrl && (
+                                    <DropdownMenuItem
+                                        variant="destructive"
+                                        onSelect={handleRemoveAvatar}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Remove photo
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {isUploading && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                Uploading...
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
             </BlurFade>

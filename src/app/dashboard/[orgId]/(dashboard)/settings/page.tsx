@@ -1,7 +1,20 @@
 "use client";
 
 import { Globe, Lock, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,24 +34,53 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useOrg } from "@/contexts/org-context";
+import { OrganizationController } from "@/services/organizations/controller";
 import type { OrganizationVisibility } from "@/services/organizations/types";
 
 export default function OrgSettingsPage() {
+    const router = useRouter();
     const { organization } = useOrg();
     const [name, setName] = useState(organization.name);
     const [visibility, setVisibility] = useState<OrganizationVisibility>(
         organization.visibility as OrganizationVisibility,
     );
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    function handleSubmit(event: React.FormEvent) {
+    async function handleSubmit(event: React.FormEvent) {
         event.preventDefault();
+
+        if (!name.trim() || !hasChanges) return;
+
         setIsSaving(true);
 
-        // TODO: Wire up to OrganizationController.update()
-        setTimeout(() => {
+        try {
+            await OrganizationController.update(organization.organizationId, {
+                ...(name !== organization.name && {
+                    name: { value: name.trim() },
+                }),
+                ...(visibility !== organization.visibility && { visibility }),
+            });
+            toast.success("Organization settings updated.");
+            router.refresh();
+        } catch {
+            toast.error("Failed to update organization settings.");
+        } finally {
             setIsSaving(false);
-        }, 500);
+        }
+    }
+
+    async function handleDelete() {
+        setIsDeleting(true);
+
+        try {
+            await OrganizationController.delete(organization.organizationId);
+            toast.success("Organization deleted.");
+            router.push("/dashboard");
+        } catch {
+            toast.error("Failed to delete organization.");
+            setIsDeleting(false);
+        }
     }
 
     const hasChanges =
@@ -132,11 +174,51 @@ export default function OrgSettingsPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button variant="destructive" size="sm" disabled>
-                            Delete Organization
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting
+                                        ? "Deleting..."
+                                        : "Delete Organization"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Delete Organization
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete{" "}
+                                        <span className="font-medium">
+                                            {organization.name}
+                                        </span>{" "}
+                                        and all its projects, members, and data.
+                                        This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel disabled={isDeleting}>
+                                        Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        variant="destructive"
+                                        onClick={handleDelete}
+                                        disabled={isDeleting}
+                                    >
+                                        {isDeleting
+                                            ? "Deleting..."
+                                            : "Delete Organization"}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                         <p className="mt-2 text-xs text-muted-foreground">
-                            This action is not yet available.
+                            Once deleted, this organization and all its data
+                            will be permanently removed.
                         </p>
                     </CardContent>
                 </Card>

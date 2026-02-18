@@ -1,5 +1,6 @@
 import {
     createOrganization,
+    deleteOrganization,
     getOrganizationById,
     getOrganizations,
     updateOrganization,
@@ -32,5 +33,9 @@ export class OrganizationController {
         request: UpdateOrganizationRequest,
     ): Promise<OrganizationResponse> {
         return updateOrganization(organizationId, request);
+    }
+
+    static async delete(organizationId: string): Promise<{ value: string }> {
+        return deleteOrganization(organizationId);
     }
 }
