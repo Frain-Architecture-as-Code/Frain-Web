@@ -12,7 +12,6 @@ api.interceptors.request.use(async (config) => {
     const session = await auth();
 
     console.log("TOKEN", session?.backendToken);
-    console.log("PROFILE URL", session?.picture);
 
     if (session?.backendToken) {
         config.headers.Authorization = `Bearer ${session.backendToken}`;

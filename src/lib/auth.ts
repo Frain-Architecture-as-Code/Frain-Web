@@ -75,7 +75,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     userId: user.id as string,
                     email: user.email as string,
                     username: (user.name ?? user.email) as string,
-                    profileUrl: token.picture ?? "",
+                    picture: token.picture ?? "",
                 });
             }
             return token;
