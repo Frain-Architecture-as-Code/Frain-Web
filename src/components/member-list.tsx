@@ -25,6 +25,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
@@ -297,14 +298,21 @@ export function MemberList({
                                 <Card className="transition-colors hover:bg-muted/50">
                                     <CardContent className="flex items-center justify-between py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                                                <span className="text-sm font-medium text-primary">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage
+                                                    src={
+                                                        member.picture ||
+                                                        undefined
+                                                    }
+                                                    alt={member.memberName}
+                                                />
+                                                <AvatarFallback className="text-sm">
                                                     {member.memberName
                                                         .split(" ")
                                                         .map((n) => n[0])
                                                         .join("")}
-                                                </span>
-                                            </div>
+                                                </AvatarFallback>
+                                            </Avatar>
                                             <div>
                                                 <p className="text-sm font-medium leading-none">
                                                     {member.memberName}

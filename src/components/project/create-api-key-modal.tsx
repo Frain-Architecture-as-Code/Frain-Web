@@ -2,6 +2,7 @@
 
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
     Command,
@@ -98,11 +99,30 @@ export function CreateApiKeyModal({
                                     isLoading || availableMembers.length === 0
                                 }
                             >
-                                {selectedMember
-                                    ? selectedMember.memberName
-                                    : availableMembers.length === 0
-                                      ? "No members available"
-                                      : "Select member..."}
+                                {selectedMember ? (
+                                    <span className="flex items-center gap-2">
+                                        <Avatar className="h-5 w-5">
+                                            <AvatarImage
+                                                src={
+                                                    selectedMember.picture ||
+                                                    undefined
+                                                }
+                                                alt={selectedMember.memberName}
+                                            />
+                                            <AvatarFallback className="text-[10px]">
+                                                {selectedMember.memberName
+                                                    .split(" ")
+                                                    .map((n) => n[0])
+                                                    .join("")}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        {selectedMember.memberName}
+                                    </span>
+                                ) : availableMembers.length === 0 ? (
+                                    "No members available"
+                                ) : (
+                                    "Select member..."
+                                )}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
@@ -134,6 +154,21 @@ export function CreateApiKeyModal({
                                                             : "opacity-0",
                                                     )}
                                                 />
+                                                <Avatar className="mr-2 h-6 w-6">
+                                                    <AvatarImage
+                                                        src={
+                                                            member.picture ||
+                                                            undefined
+                                                        }
+                                                        alt={member.memberName}
+                                                    />
+                                                    <AvatarFallback className="text-[10px]">
+                                                        {member.memberName
+                                                            .split(" ")
+                                                            .map((n) => n[0])
+                                                            .join("")}
+                                                    </AvatarFallback>
+                                                </Avatar>
                                                 <div className="flex flex-col">
                                                     <span>
                                                         {member.memberName}
