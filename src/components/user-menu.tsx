@@ -1,8 +1,9 @@
 "use client";
 
-import { Home, LogOut, User } from "lucide-react";
+import { Home, LogOut, Moon, Sun, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -38,6 +39,7 @@ function getInitials(name?: string | null, email?: string | null): string {
 
 export function UserMenu({ user }: UserMenuProps) {
     const router = useRouter();
+    const { theme, setTheme } = useTheme();
 
     const handleSignOut = async () => {
         await signOutAction();
@@ -76,6 +78,15 @@ export function UserMenu({ user }: UserMenuProps) {
                         <User className="mr-2 h-4 w-4" />
                         Profile
                     </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={() =>
+                        setTheme(theme === "dark" ? "light" : "dark")
+                    }
+                >
+                    <Sun className="mr-2 h-4 w-4 dark:hidden" />
+                    <Moon className="mr-2 hidden h-4 w-4 dark:block" />
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>

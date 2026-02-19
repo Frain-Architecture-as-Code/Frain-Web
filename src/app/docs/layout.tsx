@@ -1,11 +1,12 @@
 "use client";
 
-import { Book, ChevronRight, Menu, X } from "lucide-react";
+import { Book, ChevronRight, LayoutDashboard, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { TableOfContents } from "@/components/docs/table-of-contents";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -180,6 +181,13 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href="/dashboard/organizations">
+                                <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
+                                Go to Dashboard
+                            </Link>
+                        </Button>
+                        <ThemeToggle />
                         <Button
                             variant="ghost"
                             size="icon"
@@ -216,9 +224,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                 {/* Main content */}
                 <main className="min-w-0 flex-1 px-8 py-8 md:px-12">
                     <DocsHeader />
-                    <article className="prose prose-neutral dark:prose-invert max-w-none">
-                        {children}
-                    </article>
+                    <article className="max-w-none">{children}</article>
                     <DocsPagination />
                 </main>
 

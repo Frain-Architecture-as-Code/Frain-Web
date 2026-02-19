@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -9,23 +10,32 @@ type Heading = {
     level: number;
 };
 
+function scanHeadings(): Heading[] {
+    const article = document.querySelector("article");
+    if (!article) return [];
+
+    const elements = article.querySelectorAll("h2[id], h3[id]");
+    return Array.from(elements).map((el) => ({
+        id: el.id,
+        text: el.textContent ?? "",
+        level: Number(el.tagName.charAt(1)),
+    }));
+}
+
 export function TableOfContents() {
+    const pathname = usePathname();
     const [headings, setHeadings] = useState<Heading[]>([]);
     const [activeId, setActiveId] = useState<string>("");
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: pathname triggers re-scan on navigation
     useEffect(() => {
-        const article = document.querySelector("article");
-        if (!article) return;
-
-        const elements = article.querySelectorAll("h2[id], h3[id]");
-        const items: Heading[] = Array.from(elements).map((el) => ({
-            id: el.id,
-            text: el.textContent ?? "",
-            level: Number(el.tagName.charAt(1)),
-        }));
-
-        setHeadings(items);
-    }, []);
+        // Small delay to allow DOM to update after client navigation
+        const timer = setTimeout(() => {
+            setHeadings(scanHeadings());
+            setActiveId("");
+        }, 50);
+        return () => clearTimeout(timer);
+    }, [pathname]);
 
     useEffect(() => {
         if (headings.length === 0) return;

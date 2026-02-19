@@ -1,0 +1,59 @@
+import { ArrowRight, Boxes, GitBranch, Layers } from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { features } from "@/components/docs/data";
+import FeatureCard from "@/components/docs/feature-card";
+
+export const metadata = {
+    title: "Welcome to Frain",
+};
+
+# Welcome to Frain
+
+Frain is an open-source platform for visualizing software architecture as C4 model diagrams. Define your infrastructure as code and see it rendered as interactive diagrams.
+
+---
+
+## Why Frain?
+
+<div className="grid gap-4 sm:grid-cols-3 mt-4">
+    {
+        features.map((feature) => (
+            <FeatureCard key={feature.title} {...feature} />
+        ))
+    }
+</div>
+
+## Key Concepts
+
+### Organizations
+
+Group your projects under organizations. Control access with public or private visibility settings.
+
+### Projects
+
+Each project contains a C4 model definition. Projects can be public or private within an organization.
+
+### C4 Model Views
+
+Generate multiple diagram types from a single model: System Context, Container, Component, and Deployment views.
+
+## Get Started
+
+<div className="flex flex-wrap gap-3 mt-4">
+    <Link
+        href="/docs/get-started/quick-usage"
+        className="group inline-flex items-center gap-1 rounded-md border border-border/60 bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+    >
+        Quick Usage Guide
+        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+    </Link>
+    <Link
+        href="/docs/sdks/typescript"
+        className="group inline-flex items-center gap-1 rounded-md border border-border/60 bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+    >
+        TypeScript SDK
+        <Badge variant="secondary" className="ml-1 text-xs">New</Badge>
+    </Link>
+</div>
