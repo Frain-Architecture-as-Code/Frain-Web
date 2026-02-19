@@ -1,8 +1,8 @@
 import { ArrowRight, Boxes, GitBranch, Layers } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import HomeNavbar from "@/components/home/home-navbar";
 import HomeFooter from "@/components/home/home-footer";
+import HomeNavbar from "@/components/home/home-navbar";
+import { Button } from "@/components/ui/button";
 
 function Hero() {
     return (
@@ -25,9 +25,6 @@ function Hero() {
                         Start Building
                         <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                    <Link href="/auth/login">Sign In</Link>
                 </Button>
             </div>
         </section>

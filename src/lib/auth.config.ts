@@ -43,7 +43,6 @@ export const authConfig = {
             return token;
         },
         async session({ session, token }) {
-            console.log("TOKEN", token);
             if (session.user && token.id) {
                 session.user.id = token.id as string;
             }
@@ -58,7 +57,9 @@ export const authConfig = {
         authorized({ auth, request: { nextUrl } }) {
             const isAuthenticated = !!auth?.user;
             const publicPaths = ["/", "/auth/login", "/auth/register"];
-            const isPublicRoute = publicPaths.includes(nextUrl.pathname);
+            const isPublicRoute =
+                publicPaths.includes(nextUrl.pathname) ||
+                nextUrl.pathname.startsWith("/docs");
             const isAuthRoute = nextUrl.pathname.startsWith("/auth");
 
             if (isAuthenticated && isAuthRoute) {

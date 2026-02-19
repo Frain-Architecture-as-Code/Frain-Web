@@ -41,6 +41,7 @@ import type {
     OrganizationResponse,
     OrganizationVisibility,
 } from "@/services/organizations/types";
+import { useUserPreferences, type ViewMode } from "@/stores/user-preferences";
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -219,17 +220,15 @@ function OrganizationGridItem({ org }: { org: OrganizationResponse }) {
     );
 }
 
-enum ViewMode {
-    List = "list",
-    Grid = "grid",
-}
-
 export function OrganizationList({
     organizations,
 }: {
     organizations: OrganizationResponse[];
 }) {
-    const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Grid);
+    const viewMode = useUserPreferences((state) => state.organizationsViewMode);
+    const setViewMode = useUserPreferences(
+        (state) => state.setOrganizationsViewMode,
+    );
 
     return (
         <div className="space-y-6">

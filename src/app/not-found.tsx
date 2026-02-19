@@ -1,8 +1,8 @@
-import { ArrowLeft, Home, LogIn, Search } from "lucide-react";
+import { ArrowLeft, Home, LogIn } from "lucide-react";
 import Link from "next/link";
+import FallbackLayout from "@/components/fallback-layout";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
-import FallbackLayout from "@/components/fallback-layout";
 
 export default async function NotFoundPage() {
     const session = await auth();

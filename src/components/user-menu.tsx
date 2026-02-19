@@ -1,9 +1,8 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
+import { Home, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOutAction } from "@/services/auth/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -12,6 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { signOutAction } from "@/services/auth/actions/auth";
 
 type UserMenuProps = {
     user: {
@@ -65,6 +65,12 @@ export function UserMenu({ user }: UserMenuProps) {
                     </p>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/">
+                        <Home className="mr-2 h-4 w-4" />
+                        Home
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/dashboard/profile">
                         <User className="mr-2 h-4 w-4" />
