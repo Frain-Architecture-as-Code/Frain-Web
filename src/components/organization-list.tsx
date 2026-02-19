@@ -219,14 +219,17 @@ function OrganizationGridItem({ org }: { org: OrganizationResponse }) {
     );
 }
 
-type ViewMode = "list" | "grid";
+enum ViewMode {
+    List = "list",
+    Grid = "grid",
+}
 
 export function OrganizationList({
     organizations,
 }: {
     organizations: OrganizationResponse[];
 }) {
-    const [viewMode, setViewMode] = useState<ViewMode>("list");
+    const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Grid);
 
     return (
         <div className="space-y-6">
