@@ -60,7 +60,7 @@ export function ProjectCanvas({
         [],
     );
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-    const [views] = useState<ViewSummaryResponse[]>(initialViews);
+    const views = initialViews;
     const [activeViewId, setActiveViewId] = useState<string | null>(
         initialViews[0]?.id ?? null,
     );

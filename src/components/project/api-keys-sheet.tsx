@@ -70,7 +70,6 @@ export function ApiKeysSheet({
         memberName: string;
     } | null>(null);
     const [isRevoking, setIsRevoking] = useState(false);
-    const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
 
     const filteredKeys = useMemo(
         () =>
@@ -89,13 +88,6 @@ export function ApiKeysSheet({
     function getMemberRole(memberId: string): string {
         const member = members.find((m) => m.memberId === memberId);
         return member?.memberRole || "Unknown";
-    }
-
-    function toggleKeyVisibility(keyId: string): void {
-        setVisibleKeys((prev) => ({
-            ...prev,
-            [keyId]: !prev[keyId],
-        }));
     }
 
     function handleCopyKey(key: ApiKeyWithFull): void {

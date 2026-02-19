@@ -89,7 +89,7 @@ export function ProjectSidebar({
                             <span className="sr-only">Back to dashboard</span>
                         </Link>
                     </Button>
-                    <span className="max-w-[160px] truncate text-sm font-semibold">
+                    <span className="max-w-40 truncate text-sm font-semibold">
                         {modelTitle || projectId}
                     </span>
                 </div>

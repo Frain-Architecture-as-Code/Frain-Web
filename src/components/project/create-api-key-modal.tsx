@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { filterAvailableMembers } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import type { MemberResponse, MemberRole } from "@/services/members/types";
+import { MemberResponse, MemberRole } from "@/services/members/types";
 
 interface CreateApiKeyModalProps {
     open: boolean;
@@ -78,7 +78,7 @@ export function CreateApiKeyModal({
                     <DialogDescription>
                         Select a member to create an API key for. The key will
                         be shown only once after creation.
-                        {currentUserRole === "ADMIN" && (
+                        {currentUserRole === MemberRole.ADMIN && (
                             <span className="mt-1 block text-xs text-muted-foreground">
                                 As an admin, you can only create keys for
                                 contributors.
@@ -126,7 +126,7 @@ export function CreateApiKeyModal({
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <PopoverContent className="p-0">
                             <Command>
                                 <CommandInput placeholder="Search member..." />
                                 <CommandList>
