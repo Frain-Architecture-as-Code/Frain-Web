@@ -23,20 +23,10 @@ export async function sendInvitation(
     return data;
 }
 
-export async function acceptInvitation(
-    organizationId: string,
-    invitationId: string,
-): Promise<void> {
-    await api.patch(
-        `/api/v1/organizations/${organizationId}/invitations/${invitationId}`,
-    );
+export async function acceptInvitation(invitationId: string): Promise<void> {
+    await api.patch(`/api/v1/invitations/${invitationId}/accept`);
 }
 
-export async function declineInvitation(
-    organizationId: string,
-    invitationId: string,
-): Promise<void> {
-    await api.delete(
-        `/api/v1/organizations/${organizationId}/invitations/${invitationId}`,
-    );
+export async function declineInvitation(invitationId: string): Promise<void> {
+    await api.patch(`/api/v1/invitations/${invitationId}/reject`);
 }

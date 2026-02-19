@@ -1,15 +1,19 @@
-export type InvitationRole = "ADMIN" | "CONTRIBUTOR" | "OWNER";
+export enum InvitationRole {
+    ADMIN = "ADMIN",
+    CONTRIBUTOR = "CONTRIBUTOR",
+    OWNER = "OWNER",
+}
 
 export interface SendInvitationRequest {
     targetEmail: string;
-    role?: InvitationRole;
+    role: InvitationRole;
 }
 
 export interface InvitationResponse {
     invitationId: string;
     targetEmail: string;
     status: string;
-    role: string;
+    role: InvitationRole;
     organizationId: string;
     inviterId: string;
     createdAt: string;

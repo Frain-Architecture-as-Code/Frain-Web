@@ -43,3 +43,12 @@ export async function updateOrganization(
     );
     return data;
 }
+
+export async function deleteOrganization(
+    organizationId: string,
+): Promise<{ value: string }> {
+    const { data } = await api.delete<{ value: string }>(
+        `/api/v1/organizations/${organizationId}`,
+    );
+    return data;
+}

@@ -1,31 +1,8 @@
 import { ArrowRight, Boxes, GitBranch, Layers } from "lucide-react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-
-function Navbar() {
-    return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-sm">
-            <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-                <Link href="/" className="text-lg font-semibold tracking-tight">
-                    Frain
-                </Link>
-                <div className="flex items-center gap-2">
-                    <ThemeToggle />
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href="/auth/login">Sign In</Link>
-                    </Button>
-                    <Button size="sm" asChild>
-                        <Link href="/auth/register">
-                            Get Started
-                            <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                        </Link>
-                    </Button>
-                </div>
-            </div>
-        </header>
-    );
-}
+import HomeNavbar from "@/components/home/home-navbar";
+import HomeFooter from "@/components/home/home-footer";
 
 function Hero() {
     return (
@@ -101,28 +78,15 @@ function Features() {
     );
 }
 
-function Footer() {
-    return (
-        <footer className="border-t border-border/40 py-8">
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-6">
-                <p className="text-xs text-muted-foreground">
-                    Frain &mdash; Infrastructure as diagrams.
-                </p>
-                <p className="text-xs text-muted-foreground">Open source</p>
-            </div>
-        </footer>
-    );
-}
-
 export default function Home() {
     return (
         <div className="flex min-h-screen flex-col">
-            <Navbar />
+            <HomeNavbar />
             <main className="flex-1">
                 <Hero />
                 <Features />
             </main>
-            <Footer />
+            <HomeFooter />
         </div>
     );
 }

@@ -18,17 +18,11 @@ export class InvitationController {
         return sendInvitation(organizationId, request);
     }
 
-    static async accept(
-        organizationId: string,
-        invitationId: string,
-    ): Promise<void> {
-        return acceptInvitation(organizationId, invitationId);
+    static async accept(invitationId: string): Promise<void> {
+        return acceptInvitation(invitationId);
     }
 
-    static async decline(
-        organizationId: string,
-        invitationId: string,
-    ): Promise<void> {
-        return declineInvitation(organizationId, invitationId);
+    static async decline(invitationId: string): Promise<void> {
+        return declineInvitation(invitationId);
     }
 }

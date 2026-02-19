@@ -4,7 +4,6 @@ import {
     Building2,
     FolderKanban,
     LayoutDashboard,
-    Mail,
     Settings,
     Users,
 } from "lucide-react";
@@ -40,11 +39,6 @@ function getNavigation(orgId: string) {
             title: "Members",
             href: `/dashboard/${orgId}/members`,
             icon: Users,
-        },
-        {
-            title: "Invitations",
-            href: `/dashboard/${orgId}/invitations`,
-            icon: Mail,
         },
         {
             title: "Settings",

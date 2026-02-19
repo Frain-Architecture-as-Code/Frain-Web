@@ -19,12 +19,14 @@ export async function generateBackendToken(payload: {
     userId: string;
     email: string;
     username: string;
+    picture: string;
 }): Promise<string> {
     const secret = new TextEncoder().encode(process.env.AUTH_SECRET!);
 
     return new SignJWT({
         email: payload.email,
         username: payload.username,
+        picture: payload.picture,
     })
         .setProtectedHeader({ alg: "HS256" })
         .setSubject(payload.userId)

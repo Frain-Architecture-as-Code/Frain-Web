@@ -2,6 +2,7 @@
 
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
     Command,
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { filterAvailableMembers } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import type { MemberResponse, MemberRole } from "@/services/members/types";
+import { MemberResponse, MemberRole } from "@/services/members/types";
 
 interface CreateApiKeyModalProps {
     open: boolean;
@@ -77,7 +78,7 @@ export function CreateApiKeyModal({
                     <DialogDescription>
                         Select a member to create an API key for. The key will
                         be shown only once after creation.
-                        {currentUserRole === "ADMIN" && (
+                        {currentUserRole === MemberRole.ADMIN && (
                             <span className="mt-1 block text-xs text-muted-foreground">
                                 As an admin, you can only create keys for
                                 contributors.
@@ -98,15 +99,34 @@ export function CreateApiKeyModal({
                                     isLoading || availableMembers.length === 0
                                 }
                             >
-                                {selectedMember
-                                    ? selectedMember.memberName
-                                    : availableMembers.length === 0
-                                      ? "No members available"
-                                      : "Select member..."}
+                                {selectedMember ? (
+                                    <span className="flex items-center gap-2">
+                                        <Avatar className="h-5 w-5">
+                                            <AvatarImage
+                                                src={
+                                                    selectedMember.picture ||
+                                                    undefined
+                                                }
+                                                alt={selectedMember.memberName}
+                                            />
+                                            <AvatarFallback className="text-[10px]">
+                                                {selectedMember.memberName
+                                                    .split(" ")
+                                                    .map((n) => n[0])
+                                                    .join("")}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        {selectedMember.memberName}
+                                    </span>
+                                ) : availableMembers.length === 0 ? (
+                                    "No members available"
+                                ) : (
+                                    "Select member..."
+                                )}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <PopoverContent className="p-0">
                             <Command>
                                 <CommandInput placeholder="Search member..." />
                                 <CommandList>
@@ -125,6 +145,30 @@ export function CreateApiKeyModal({
                                                     setComboboxOpen(false);
                                                 }}
                                             >
+                                                <Avatar className="mr-2 h-6 w-6">
+                                                    <AvatarImage
+                                                        src={
+                                                            member.picture ||
+                                                            undefined
+                                                        }
+                                                        alt={member.memberName}
+                                                    />
+                                                    <AvatarFallback className="text-[10px]">
+                                                        {member.memberName
+                                                            .split(" ")
+                                                            .map((n) => n[0])
+                                                            .join("")}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <span>
+                                                        {member.memberName}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {member.memberRole}
+                                                    </span>
+                                                </div>
+
                                                 <Check
                                                     className={cn(
                                                         "mr-2 h-4 w-4",
@@ -134,14 +178,6 @@ export function CreateApiKeyModal({
                                                             : "opacity-0",
                                                     )}
                                                 />
-                                                <div className="flex flex-col">
-                                                    <span>
-                                                        {member.memberName}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {member.memberRole}
-                                                    </span>
-                                                </div>
                                             </CommandItem>
                                         ))}
                                     </CommandGroup>

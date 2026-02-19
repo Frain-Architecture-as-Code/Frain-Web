@@ -23,3 +23,13 @@ export async function updateMember(
     );
     return data;
 }
+
+export async function kickMember(
+    organizationId: string,
+    memberId: string,
+): Promise<{ value: string }> {
+    const { data } = await api.delete<{ value: string }>(
+        `/api/v1/organizations/${organizationId}/members/${memberId}`,
+    );
+    return data;
+}
