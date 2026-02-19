@@ -2,6 +2,14 @@ import type { MDXComponents } from "mdx/types";
 import { type ComponentPropsWithoutRef } from "react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 
 export function useMDXComponents(): MDXComponents {
     return {
@@ -113,28 +121,25 @@ export function useMDXComponents(): MDXComponents {
                 {children}
             </blockquote>
         ),
-        table: ({ children, ...props }: ComponentPropsWithoutRef<"table">) => (
+        table: ({ children, ...props }) => (
             <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-sm" {...props}>
-                    {children}
-                </table>
+                <Table {...props}>{children}</Table>
             </div>
         ),
-        th: ({ children, ...props }: ComponentPropsWithoutRef<"th">) => (
-            <th
-                className="border border-border/60 px-3 py-2 text-left font-semibold text-foreground"
-                {...props}
-            >
-                {children}
-            </th>
+        thead: ({ children, ...props }) => (
+            <TableHeader {...props}>{children}</TableHeader>
         ),
-        td: ({ children, ...props }: ComponentPropsWithoutRef<"td">) => (
-            <td
-                className="border border-border/60 px-3 py-2 text-muted-foreground"
-                {...props}
-            >
-                {children}
-            </td>
+        tbody: ({ children, ...props }) => (
+            <TableBody {...props}>{children}</TableBody>
+        ),
+        tr: ({ children, ...props }) => (
+            <TableRow {...props}>{children}</TableRow>
+        ),
+        th: ({ children, ...props }) => (
+            <TableHead {...props}>{children}</TableHead>
+        ),
+        td: ({ children, ...props }) => (
+            <TableCell {...props}>{children}</TableCell>
         ),
     };
 }

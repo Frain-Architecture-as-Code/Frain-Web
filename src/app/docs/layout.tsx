@@ -37,11 +37,6 @@ const navigation: {
                 href: "/docs/get-started/welcome",
                 section: DocSection.GetStarted,
             },
-            {
-                title: "Quick Usage",
-                href: "/docs/get-started/quick-usage",
-                section: DocSection.GetStarted,
-            },
         ],
     },
     {
