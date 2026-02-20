@@ -87,12 +87,12 @@ function CreateOrganizationDialog() {
 
         try {
             await OrganizationController.create({
-                name: { value: name.trim() },
+                name: name.trim(),
                 visibility,
             });
             setOpen(false);
             setName("");
-            setVisibility("PUBLIC");
+            setVisibility(OrganizationVisibility.PUBLIC);
             router.refresh();
             toast.success("Organization created successfully");
         } catch {
