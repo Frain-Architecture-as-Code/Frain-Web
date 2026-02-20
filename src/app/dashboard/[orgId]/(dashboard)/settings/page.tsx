@@ -57,7 +57,7 @@ export default function OrgSettingsPage() {
         try {
             await OrganizationController.update(organization.organizationId, {
                 ...(name !== organization.name && {
-                    name: { value: name.trim() },
+                    name: name.trim(),
                 }),
                 ...(visibility !== organization.visibility && { visibility }),
             });

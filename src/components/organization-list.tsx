@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { OrganizationController } from "@/services/organizations/controller";
-import type {
+import {
     OrganizationResponse,
     OrganizationVisibility,
 } from "@/services/organizations/types";
@@ -52,7 +52,7 @@ function formatDate(dateString: string): string {
 }
 
 function VisibilityBadge({ visibility }: { visibility: string }) {
-    if (visibility === "PUBLIC") {
+    if (visibility === OrganizationVisibility.PUBLIC) {
         return (
             <Badge variant="secondary" className="gap-1">
                 <Globe className="h-3 w-3" />
@@ -73,8 +73,9 @@ function CreateOrganizationDialog() {
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
-    const [visibility, setVisibility] =
-        useState<OrganizationVisibility>("PUBLIC");
+    const [visibility, setVisibility] = useState<OrganizationVisibility>(
+        OrganizationVisibility.PUBLIC,
+    );
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     async function handleSubmit(event: React.FormEvent) {
