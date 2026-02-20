@@ -1,6 +1,13 @@
 "use client";
 
-import { Book, ChevronRight, LayoutDashboard, Menu, X } from "lucide-react";
+import {
+    Book,
+    ChevronRight,
+    Github,
+    LayoutDashboard,
+    Menu,
+    X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -43,6 +50,11 @@ const navigation: {
         title: "SDKs",
         section: DocSection.Sdks,
         items: [
+            {
+                title: "Overview",
+                href: "/docs/sdks",
+                section: DocSection.Sdks,
+            },
             {
                 title: "TypeScript",
                 href: "/docs/sdks/typescript",
@@ -128,29 +140,6 @@ function DocsPagination() {
     );
 }
 
-function DocsHeader() {
-    const pathname = usePathname();
-    const allItems = getAllNavItems();
-    const current = allItems.find((item) => item.href === pathname);
-    const section = navigation.find((s) =>
-        s.items.some((item) => item.href === pathname),
-    );
-
-    return (
-        <div className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-            {section && (
-                <>
-                    <span>{section.title}</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                </>
-            )}
-            {current && (
-                <span className="text-foreground">{current.title}</span>
-            )}
-        </div>
-    );
-}
-
 export default function DocsLayout({ children }: { children: ReactNode }) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -176,6 +165,16 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" asChild>
+                            <Link
+                                href="https://github.com/Frain-Architecture-as-Code"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <Github className="h-4 w-4" />
+                                <span className="sr-only">GitHub</span>
+                            </Link>
+                        </Button>
                         <Button variant="outline" size="sm" asChild>
                             <Link href="/dashboard/organizations">
                                 <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
@@ -218,7 +217,6 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
                 {/* Main content */}
                 <main className="min-w-0 flex-1 px-8 py-8 md:px-12">
-                    <DocsHeader />
                     <article className="max-w-none">{children}</article>
                     <DocsPagination />
                 </main>

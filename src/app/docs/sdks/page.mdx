@@ -1,0 +1,31 @@
+import { Typescript } from "@/components/ui/svgs/typescript";
+import { Python } from "@/components/ui/svgs/python";
+import SdkCard from "@/components/docs/sdk-card";
+
+export const metadata = {
+    title: "SDKs",
+    description: "Choose your preferred SDK to define and deploy your C4 model architecture as code.",
+};
+
+# SDKs
+
+Choose your preferred SDK to define and deploy your C4 model architecture as code.
+
+---
+
+## Pick Your SDK
+
+Start by selecting your SDK of choice. Then follow the instructions to install the dependencies and start modeling your architecture.
+
+<div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+    <SdkCard
+        name="TypeScript"
+        icon={<Typescript className="h-12 w-12" />}
+        href="/docs/sdks/typescript"
+    />
+    <SdkCard
+        name="Python"
+        icon={<Python className="h-12 w-12" />}
+        comingSoon
+    />
+</div>

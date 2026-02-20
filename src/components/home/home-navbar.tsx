@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Github } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,16 @@ export default async function HomeNavbar() {
                     </nav>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link
+                            href="https://github.com/Frain-Architecture-as-Code"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Github className="h-4 w-4" />
+                            <span className="sr-only">GitHub</span>
+                        </Link>
+                    </Button>
                     <ThemeToggle />
                     {isLoggedIn ? (
                         <Button size="sm" asChild>
