@@ -1,6 +1,6 @@
 import axios from "axios";
 import { auth } from "@/lib/auth";
-import { unauthorized } from "next/navigation";
+import { redirect } from "next/navigation";
 
 const api = axios.create({
     baseURL: process.env.BACKEND_API_URL,
@@ -24,12 +24,12 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const originalRequest = error.config;
+        const status = error.response.status;
 
-        console.log("ERROR", error);
+        console.log(error.response);
 
-        if (error.response.status in [401, 403, 500]) {
-            unauthorized();
+        if (status === 401) {
+            redirect("/errors/401");
         }
 
         return Promise.reject(error);
