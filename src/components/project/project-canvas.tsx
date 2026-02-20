@@ -3,6 +3,7 @@
 import {
     Background,
     BackgroundVariant,
+    ColorMode,
     Controls,
     type Edge,
     MiniMap,
@@ -34,6 +35,7 @@ import { MemberController } from "@/services/members/controller";
 import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
+import { useTheme } from "next-themes";
 
 interface ProjectCanvasProps {
     projectId: string;
@@ -71,6 +73,8 @@ export function ProjectCanvas({
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false);
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
+
+    const { theme } = useTheme();
 
     // Derive current user's role from members array
     const currentUserRole = useMemo<MemberRole>(() => {
@@ -277,7 +281,7 @@ export function ProjectCanvas({
                 onNodeDragStop={handleNodeDragStop}
                 nodeTypes={c4NodeTypes}
                 edgeTypes={edgeTypes}
-                colorMode="dark"
+                colorMode={(theme ?? "dark") as ColorMode}
                 fitView
                 fitViewOptions={{ padding: 0.2 }}
                 minZoom={0.1}
