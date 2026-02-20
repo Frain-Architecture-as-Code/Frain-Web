@@ -3,7 +3,7 @@
 import {
     Background,
     BackgroundVariant,
-    ColorMode,
+    type ColorMode,
     Controls,
     type Edge,
     MiniMap,
@@ -13,13 +13,15 @@ import {
     useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
     ApiKeysSheet,
     type ApiKeyWithFull,
 } from "@/components/project/api-keys-sheet";
-import { c4NodeTypes, NODE_STYLES } from "@/components/project/c4-nodes";
+import { c4NodeTypes } from "@/components/project/c4-nodes";
+import { useCanvasThemeStore } from "@/components/project/canvas-theme-store";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
 import { FloatingEdge } from "@/components/project/floating-edge";
@@ -35,7 +37,12 @@ import { MemberController } from "@/services/members/controller";
 import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
-import { useTheme } from "next-themes";
+
+// Edge colour tokens — defined here so the canvas owns edge theming directly
+const EDGE_COLOURS = {
+    dark: { stroke: "#C5C5C5", arrow: "#ffffff", label: "#ffffff" },
+    light: { stroke: "#1A1A1A", arrow: "#1A1A1A", label: "#1A1A1A" },
+} as const;
 
 interface ProjectCanvasProps {
     projectId: string;
@@ -49,6 +56,28 @@ interface ProjectCanvasProps {
 const edgeTypes = {
     floating: FloatingEdge,
 };
+
+// MiniMap node colours mirror each shape's own COLOURS object
+const MINIMAP_COLOURS = {
+    dark: {
+        PERSON: "#003668",
+        SYSTEM: "#0055A4",
+        EXTERNAL_SYSTEM: "#81788A",
+        DATABASE: "#438DD5",
+        WEB_APP: "#438DD5",
+        CONTAINER: "#0097D1",
+        COMPONENT: "#50B5ED",
+    },
+    light: {
+        PERSON: "#D4E5F7",
+        SYSTEM: "#C7DEFF",
+        EXTERNAL_SYSTEM: "#E8E4EE",
+        DATABASE: "#BFD9F5",
+        WEB_APP: "#BFD9F5",
+        CONTAINER: "#B3EAF9",
+        COMPONENT: "#C5EAF8",
+    },
+} as const;
 
 export function ProjectCanvas({
     projectId,
@@ -74,7 +103,47 @@ export function ProjectCanvas({
     const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false);
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
 
-    const { theme } = useTheme();
+    // resolvedTheme is always "light" or "dark" — never "system"
+    // Fall back to "dark" while next-themes is still hydrating (undefined)
+    const { resolvedTheme } = useTheme();
+    const canvasTheme = (resolvedTheme === "light" ? "light" : "dark") as
+        | "dark"
+        | "light";
+
+    const setTheme = useCanvasThemeStore((s) => s.setTheme);
+
+    // Keep the zustand store in sync with next-themes
+    useEffect(() => {
+        setTheme(canvasTheme);
+    }, [canvasTheme, setTheme]);
+
+    // Re-colour edges whenever the canvas theme changes
+    useEffect(() => {
+        const c = EDGE_COLOURS[canvasTheme];
+        setEdges((prev) =>
+            prev.map((edge) => {
+                const prevMarker =
+                    typeof edge.markerEnd === "object" &&
+                    edge.markerEnd !== null
+                        ? edge.markerEnd
+                        : {
+                              type: "arrowclosed" as const,
+                              width: 20,
+                              height: 20,
+                          };
+                return {
+                    ...edge,
+                    markerEnd: {
+                        ...prevMarker,
+                        type: prevMarker.type ?? ("arrowclosed" as const),
+                        color: c.arrow,
+                    },
+                    style: { ...edge.style, stroke: c.stroke },
+                    labelStyle: { ...edge.labelStyle, fill: c.label },
+                };
+            }),
+        );
+    }, [canvasTheme, setEdges]);
 
     // Derive current user's role from members array
     const currentUserRole = useMemo<MemberRole>(() => {
@@ -167,7 +236,6 @@ export function ProjectCanvas({
     // API key handlers
     function handleOpenApiKeysModal(): void {
         setIsApiKeysModalOpen(true);
-        // Refresh API keys when modal opens
         refreshApiKeys();
     }
 
@@ -203,15 +271,14 @@ export function ProjectCanvas({
                 duration: 10000,
             });
 
-            // Add the newly created key with full key to state
             const newKeyWithFull: ApiKeyWithFull = {
                 id: result.id,
                 projectId: result.projectId,
                 memberId: result.memberId,
-                apiKeyPrefix: result.apiKey.slice(0, 8), // Extract prefix from full key
+                apiKeyPrefix: result.apiKey.slice(0, 8),
                 lastUsedAt: "",
                 createdAt: result.createdAt,
-                fullKey: result.apiKey, // Store the full key
+                fullKey: result.apiKey,
             };
 
             setApiKeys((prev) => [newKeyWithFull, ...prev]);
@@ -224,7 +291,6 @@ export function ProjectCanvas({
     }
 
     async function handleRevokeApiKey(apiKeyId: string): Promise<void> {
-        // Optimistic update
         setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));
 
         try {
@@ -234,9 +300,8 @@ export function ProjectCanvas({
                 apiKeyId,
             );
         } catch (error) {
-            // Revert on error
             await refreshApiKeys();
-            throw error; // Re-throw so modal can handle it
+            throw error;
         }
     }
 
@@ -281,7 +346,6 @@ export function ProjectCanvas({
                 onNodeDragStop={handleNodeDragStop}
                 nodeTypes={c4NodeTypes}
                 edgeTypes={edgeTypes}
-                colorMode={(theme ?? "dark") as ColorMode}
                 fitView
                 fitViewOptions={{ padding: 0.2 }}
                 minZoom={0.1}
@@ -304,7 +368,9 @@ export function ProjectCanvas({
                     maskColor="hsl(var(--background) / 0.6)"
                     nodeColor={(node) => {
                         const nodeType = (node.data as C4NodeData)?.nodeType;
-                        return nodeType ? NODE_STYLES[nodeType].bg : "#438DD5";
+                        return nodeType
+                            ? MINIMAP_COLOURS[canvasTheme][nodeType]
+                            : MINIMAP_COLOURS[canvasTheme].SYSTEM;
                     }}
                     style={{ marginLeft: "18rem" }}
                 />

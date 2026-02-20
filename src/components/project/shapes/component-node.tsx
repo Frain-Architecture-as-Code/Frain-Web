@@ -1,9 +1,15 @@
 "use client";
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
+import { useCanvasThemeStore } from "@/components/project/canvas-theme-store";
 import type { C4NodeData } from "@/components/project/elk-layout";
-import { NODE_HEIGHT, NODE_STYLES, NODE_WIDTH } from "./constants";
+import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
+
+const COLOURS = {
+    dark: { bg: "#50B5ED", stroke: "#50B5ED", text: "#ffffff" },
+    light: { bg: "#C5EAF8", stroke: "#2190C4", text: "#003A52" },
+};
 
 /**
  * ComponentNode - UML-style component shape with side tabs
@@ -11,7 +17,8 @@ import { NodeContent } from "./node-content";
  */
 export function ComponentNode(props: NodeProps) {
     const data = props.data as C4NodeData;
-    const s = NODE_STYLES.COMPONENT;
+    const theme = useCanvasThemeStore((s) => s.theme);
+    const s = COLOURS[theme];
     const w = NODE_WIDTH.COMPONENT;
     const h = NODE_HEIGHT.COMPONENT;
 

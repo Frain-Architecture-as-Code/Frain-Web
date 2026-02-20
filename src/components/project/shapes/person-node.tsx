@@ -1,9 +1,15 @@
 "use client";
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
+import { useCanvasThemeStore } from "@/components/project/canvas-theme-store";
 import type { C4NodeData } from "@/components/project/elk-layout";
-import { NODE_HEIGHT, NODE_STYLES, NODE_WIDTH } from "./constants";
+import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
+
+const COLOURS = {
+    dark: { bg: "#003668", stroke: "#003668", text: "#ffffff" },
+    light: { bg: "#D4E5F7", stroke: "#1A5FA8", text: "#0D2B4E" },
+};
 
 /**
  * PersonNode - Human silhouette shape (circle head + rounded rectangle body)
@@ -11,7 +17,8 @@ import { NodeContent } from "./node-content";
  */
 export function PersonNode(props: NodeProps) {
     const data = props.data as C4NodeData;
-    const s = NODE_STYLES.PERSON;
+    const theme = useCanvasThemeStore((s) => s.theme);
+    const s = COLOURS[theme];
     const w = NODE_WIDTH.PERSON;
     const h = NODE_HEIGHT.PERSON;
 
