@@ -1,9 +1,11 @@
 import { ArrowRight, Boxes, GitBranch, Layers } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { features } from "@/components/docs/data";
 import FeatureCard from "@/components/docs/feature-card";
+import AnchorButton from "@/components/docs/anchor-button";
 
 export const metadata = {
     title: "Welcome to Frain",
@@ -38,22 +40,3 @@ Each project contains a C4 model definition. Projects can be public or private w
 ### C4 Model Views
 
 Generate multiple diagram types from a single model: System Context, Container, Component, and Deployment views.
-
-## Get Started
-
-<div className="flex flex-wrap gap-3 mt-4">
-    <Link
-        href="/docs/get-started/quick-usage"
-        className="group inline-flex items-center gap-1 rounded-md border border-border/60 bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
-    >
-        Quick Usage Guide
-        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-    </Link>
-    <Link
-        href="/docs/sdks/typescript"
-        className="group inline-flex items-center gap-1 rounded-md border border-border/60 bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
-    >
-        TypeScript SDK
-        <Badge variant="secondary" className="ml-1 text-xs">New</Badge>
-    </Link>
-</div>

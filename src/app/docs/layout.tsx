@@ -44,7 +44,7 @@ const navigation: {
         section: DocSection.Sdks,
         items: [
             {
-                title: "TypeScript SDK",
+                title: "TypeScript",
                 href: "/docs/sdks/typescript",
                 section: DocSection.Sdks,
             },
