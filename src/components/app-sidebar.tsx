@@ -18,11 +18,6 @@ import {
 
 const navigation = [
     {
-        title: "Overview",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-    },
-    {
         title: "Organizations",
         href: "/dashboard/organizations",
         icon: Building2,
