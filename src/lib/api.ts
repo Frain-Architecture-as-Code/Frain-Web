@@ -26,13 +26,13 @@ api.interceptors.response.use(
     async (error) => {
         const status = error.response.status;
 
-        console.log(error.response);
-
         if (status === 401) {
             redirect("/errors/401");
         }
 
-        return Promise.reject(error);
+        return Promise.resolve({
+            message: error.response.data.message,
+        });
     },
 );
 
