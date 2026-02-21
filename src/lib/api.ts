@@ -31,7 +31,7 @@ api.interceptors.response.use(
         }
 
         return Promise.resolve({
-            message: error.response.data.message,
+            error: error.response.data.message,
         });
     },
 );
