@@ -1,11 +1,11 @@
 "use client";
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { useCanvasThemeStore } from "@/components/project/canvas-theme-store";
 import type { C4NodeData } from "@/components/project/elk-layout";
 import type { NodeType } from "@/services/c4models/types";
 import { NODE_HEIGHT, NODE_LABELS, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
+import { useTheme } from "next-themes";
 
 const COLOURS: Record<
     "SYSTEM" | "EXTERNAL_SYSTEM" | "CONTAINER",
@@ -38,9 +38,9 @@ interface RoundedBoxNodeProps {
  * Used for Software Systems, External Systems, and Containers
  */
 export function RoundedBoxNode({ data, nodeType }: RoundedBoxNodeProps) {
-    const theme = useCanvasThemeStore((s) => s.theme);
+    const { theme } = useTheme();
     const colours = COLOURS[nodeType as keyof typeof COLOURS];
-    const s = colours[theme];
+    const s = colours[theme as "dark" | "light"];
     const w = NODE_WIDTH[nodeType];
     const h = NODE_HEIGHT[nodeType];
     const r = 10;

@@ -3,10 +3,8 @@
 import {
     Background,
     BackgroundVariant,
-    type ColorMode,
     Controls,
     type Edge,
-    MiniMap,
     type Node,
     ReactFlow,
     useEdgesState,
@@ -21,7 +19,6 @@ import {
     type ApiKeyWithFull,
 } from "@/components/project/api-keys-sheet";
 import { c4NodeTypes } from "@/components/project/c4-nodes";
-import { useCanvasThemeStore } from "@/components/project/canvas-theme-store";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
 import { FloatingEdge } from "@/components/project/floating-edge";
@@ -57,28 +54,6 @@ const edgeTypes = {
     floating: FloatingEdge,
 };
 
-// MiniMap node colours mirror each shape's own COLOURS object
-const MINIMAP_COLOURS = {
-    dark: {
-        PERSON: "#003668",
-        SYSTEM: "#0055A4",
-        EXTERNAL_SYSTEM: "#81788A",
-        DATABASE: "#438DD5",
-        WEB_APP: "#438DD5",
-        CONTAINER: "#0097D1",
-        COMPONENT: "#50B5ED",
-    },
-    light: {
-        PERSON: "#D4E5F7",
-        SYSTEM: "#C7DEFF",
-        EXTERNAL_SYSTEM: "#E8E4EE",
-        DATABASE: "#BFD9F5",
-        WEB_APP: "#BFD9F5",
-        CONTAINER: "#B3EAF9",
-        COMPONENT: "#C5EAF8",
-    },
-} as const;
-
 export function ProjectCanvas({
     projectId,
     organizationId,
@@ -105,21 +80,11 @@ export function ProjectCanvas({
 
     // resolvedTheme is always "light" or "dark" — never "system"
     // Fall back to "dark" while next-themes is still hydrating (undefined)
-    const { resolvedTheme } = useTheme();
-    const canvasTheme = (resolvedTheme === "light" ? "light" : "dark") as
-        | "dark"
-        | "light";
-
-    const setTheme = useCanvasThemeStore((s) => s.setTheme);
-
-    // Keep the zustand store in sync with next-themes
-    useEffect(() => {
-        setTheme(canvasTheme);
-    }, [canvasTheme, setTheme]);
+    const { theme } = useTheme();
 
     // Re-colour edges whenever the canvas theme changes
     useEffect(() => {
-        const c = EDGE_COLOURS[canvasTheme];
+        const c = EDGE_COLOURS[theme as "dark" | "light"];
         setEdges((prev) =>
             prev.map((edge) => {
                 const prevMarker =
@@ -143,7 +108,7 @@ export function ProjectCanvas({
                 };
             }),
         );
-    }, [canvasTheme, setEdges]);
+    }, [theme, setEdges]);
 
     // Derive current user's role from members array
     const currentUserRole = useMemo<MemberRole>(() => {
@@ -381,18 +346,6 @@ export function ProjectCanvas({
                     position="bottom-right"
                     showInteractive={false}
                     className="!bg-background/80 !border-border !shadow-sm [&>button]:!bg-background [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-muted"
-                />
-                <MiniMap
-                    position="top-right"
-                    className="!bg-background/80 !border-border !shadow-sm"
-                    maskColor="hsl(var(--background) / 0.6)"
-                    nodeColor={(node) => {
-                        const nodeType = (node.data as C4NodeData)?.nodeType;
-                        return nodeType
-                            ? MINIMAP_COLOURS[canvasTheme][nodeType]
-                            : MINIMAP_COLOURS[canvasTheme].SYSTEM;
-                    }}
-                    style={{ marginLeft: "18rem" }}
                 />
             </ReactFlow>
 

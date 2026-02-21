@@ -1,10 +1,10 @@
 "use client";
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { useCanvasThemeStore } from "@/components/project/canvas-theme-store";
 import type { C4NodeData } from "@/components/project/elk-layout";
 import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
+import { useTheme } from "next-themes";
 
 const COLOURS = {
     dark: { bg: "#003668", stroke: "#003668", text: "#ffffff" },
@@ -17,8 +17,8 @@ const COLOURS = {
  */
 export function PersonNode(props: NodeProps) {
     const data = props.data as C4NodeData;
-    const theme = useCanvasThemeStore((s) => s.theme);
-    const s = COLOURS[theme];
+    const { theme } = useTheme();
+    const s = COLOURS[theme as "dark" | "light"];
     const w = NODE_WIDTH.PERSON;
     const h = NODE_HEIGHT.PERSON;
 
