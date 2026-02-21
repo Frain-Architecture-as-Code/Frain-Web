@@ -1,9 +1,11 @@
 "use client";
-import { OrganizationController } from "@/services/organizations/controller";
-import { OrganizationVisibility } from "@/services/organizations/types";
+import { Globe, Lock, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { OrganizationController } from "@/services/organizations/controller";
+import { OrganizationVisibility } from "@/services/organizations/types";
+import { Button } from "../ui/button";
 import {
     Dialog,
     DialogContent,
@@ -13,10 +15,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Globe, Lock, Plus } from "lucide-react";
-import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import {
     Select,
     SelectContent,
@@ -51,8 +51,12 @@ export default function CreateOrganizationDialog() {
             setVisibility(OrganizationVisibility.PUBLIC);
             router.refresh();
             toast.success("Organization created successfully");
-        } catch {
-            toast.error("Failed to create organization");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsSubmitting(false);
         }

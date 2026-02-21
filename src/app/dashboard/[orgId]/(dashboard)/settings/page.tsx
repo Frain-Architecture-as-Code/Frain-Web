@@ -63,8 +63,12 @@ export default function OrgSettingsPage() {
             });
             toast.success("Organization settings updated.");
             router.refresh();
-        } catch {
-            toast.error("Failed to update organization settings.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsSaving(false);
         }
@@ -77,8 +81,12 @@ export default function OrgSettingsPage() {
             await OrganizationController.delete(organization.organizationId);
             toast.success("Organization deleted.");
             router.push("/dashboard");
-        } catch {
-            toast.error("Failed to delete organization.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
             setIsDeleting(false);
         }
     }

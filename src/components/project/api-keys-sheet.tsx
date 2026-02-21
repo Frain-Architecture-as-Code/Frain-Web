@@ -130,7 +130,7 @@ export function ApiKeysSheet({
             toast.error(
                 error instanceof Error
                     ? error.message
-                    : "Failed to revoke API key",
+                    : "An unexpected error occurred",
             );
         } finally {
             setIsRevoking(false);

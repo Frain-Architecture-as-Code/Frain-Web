@@ -35,8 +35,12 @@ function NotificationCard({
             );
             toast.success("Invitation accepted!");
             onUpdate();
-        } catch {
-            toast.error("Failed to accept invitation");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsAccepting(false);
         }
@@ -52,8 +56,12 @@ function NotificationCard({
             );
             toast.success("Invitation declined");
             onUpdate();
-        } catch {
-            toast.error("Failed to decline invitation");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsDeclining(false);
         }
@@ -137,8 +145,12 @@ export function NotificationList({
         try {
             const updated = await NotificationController.getAll();
             setNotifications(updated);
-        } catch {
-            toast.error("Failed to refresh notifications");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         }
     }
 

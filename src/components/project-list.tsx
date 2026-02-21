@@ -87,8 +87,12 @@ function CreateProjectDialog({ organizationId }: { organizationId: string }) {
             setVisibility("PUBLIC");
             router.refresh();
             toast.success("Project created successfully");
-        } catch {
-            toast.error("Failed to create project");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsSubmitting(false);
         }

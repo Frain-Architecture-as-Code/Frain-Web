@@ -172,8 +172,12 @@ export function ProjectCanvas({
             setNodes(result.nodes);
             setEdges(result.edges);
             setActiveViewId(viewId);
-        } catch {
-            toast.error("Failed to load view");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsLoading(false);
         }
@@ -213,8 +217,12 @@ export function ProjectCanvas({
     useEffect(() => {
         MemberController.getAll(organizationId)
             .then(setMembers)
-            .catch(() => {
-                toast.error("Failed to load organization members");
+            .catch((error: unknown) => {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred",
+                );
             });
     }, [organizationId]);
 
@@ -228,8 +236,12 @@ export function ProjectCanvas({
         C4ModelController.updateNodePosition(projectId, activeViewId, node.id, {
             x: Math.round(node.position.x),
             y: Math.round(node.position.y),
-        }).catch(() => {
-            toast.error("Failed to save node position");
+        }).catch((error: unknown) => {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         });
     }
 
@@ -247,8 +259,12 @@ export function ProjectCanvas({
                 projectId,
             );
             setApiKeys(updatedKeys);
-        } catch {
-            toast.error("Failed to load API keys");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsApiKeysLoading(false);
         }
@@ -283,8 +299,12 @@ export function ProjectCanvas({
 
             setApiKeys((prev) => [newKeyWithFull, ...prev]);
             setIsCreateModalOpen(false);
-        } catch {
-            toast.error("Failed to create API key");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsCreatingApiKey(false);
         }
