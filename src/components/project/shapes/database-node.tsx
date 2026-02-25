@@ -2,8 +2,14 @@
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import type { C4NodeData } from "@/components/project/elk-layout";
-import { NODE_HEIGHT, NODE_STYLES, NODE_WIDTH } from "./constants";
+import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
+import { useTheme } from "next-themes";
+
+const COLOURS = {
+    dark: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
+    light: { bg: "#BFD9F5", stroke: "#2B6CB0", text: "#0D2B4E" },
+};
 
 /**
  * DatabaseNode - Cylinder shape for database storage
@@ -11,7 +17,8 @@ import { NodeContent } from "./node-content";
  */
 export function DatabaseNode(props: NodeProps) {
     const data = props.data as C4NodeData;
-    const s = NODE_STYLES.DATABASE;
+    const { theme } = useTheme();
+    const s = COLOURS[theme as "dark" | "light"];
     const w = NODE_WIDTH.DATABASE;
     const h = NODE_HEIGHT.DATABASE;
 

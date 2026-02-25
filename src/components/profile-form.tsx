@@ -38,6 +38,7 @@ import {
     updateAvatarAction,
     updateProfileAction,
 } from "@/services/auth/actions/profile";
+import { uploadToCloudinary } from "@/services/cloudinary/actions";
 
 interface ProfileFormProps {
     user: {
@@ -60,29 +61,6 @@ function getInitials(name: string, email: string): string {
         return email[0].toUpperCase();
     }
     return "U";
-}
-
-async function uploadToCloudinary(file: File): Promise<string> {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    if (!cloudName) {
-        throw new Error("Cloudinary cloud name is not configured.");
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "frain_avatars");
-
-    const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: "POST", body: formData },
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to upload image.");
-    }
-
-    const data = await response.json();
-    return data.secure_url as string;
 }
 
 function DeleteAccountDialog({ userEmail }: { userEmail: string }) {
@@ -204,8 +182,12 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 toast.success("Avatar updated successfully.");
                 router.refresh();
             }
-        } catch {
-            toast.error("Failed to upload avatar. Please try again.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
             setAvatarUrl(user.image);
         } finally {
             setIsUploading(false);

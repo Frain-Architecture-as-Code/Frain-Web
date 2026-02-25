@@ -5,20 +5,20 @@ import {
     BackgroundVariant,
     Controls,
     type Edge,
-    MiniMap,
     type Node,
     ReactFlow,
     useEdgesState,
     useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
     ApiKeysSheet,
     type ApiKeyWithFull,
 } from "@/components/project/api-keys-sheet";
-import { c4NodeTypes, NODE_STYLES } from "@/components/project/c4-nodes";
+import { c4NodeTypes } from "@/components/project/c4-nodes";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
 import { FloatingEdge } from "@/components/project/floating-edge";
@@ -34,6 +34,12 @@ import { MemberController } from "@/services/members/controller";
 import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
+
+// Edge colour tokens — defined here so the canvas owns edge theming directly
+const EDGE_COLOURS = {
+    dark: { stroke: "#C5C5C5", arrow: "#ffffff", label: "#ffffff" },
+    light: { stroke: "#1A1A1A", arrow: "#1A1A1A", label: "#1A1A1A" },
+} as const;
 
 interface ProjectCanvasProps {
     projectId: string;
@@ -72,6 +78,38 @@ export function ProjectCanvas({
     const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false);
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
 
+    // resolvedTheme is always "light" or "dark" — never "system"
+    // Fall back to "dark" while next-themes is still hydrating (undefined)
+    const { theme } = useTheme();
+
+    // Re-colour edges whenever the canvas theme changes
+    useEffect(() => {
+        const c = EDGE_COLOURS[theme as "dark" | "light"];
+        setEdges((prev) =>
+            prev.map((edge) => {
+                const prevMarker =
+                    typeof edge.markerEnd === "object" &&
+                    edge.markerEnd !== null
+                        ? edge.markerEnd
+                        : {
+                              type: "arrowclosed" as const,
+                              width: 20,
+                              height: 20,
+                          };
+                return {
+                    ...edge,
+                    markerEnd: {
+                        ...prevMarker,
+                        type: prevMarker.type ?? ("arrowclosed" as const),
+                        color: c.arrow,
+                    },
+                    style: { ...edge.style, stroke: c.stroke },
+                    labelStyle: { ...edge.labelStyle, fill: c.label },
+                };
+            }),
+        );
+    }, [theme, setEdges]);
+
     // Derive current user's role from members array
     const currentUserRole = useMemo<MemberRole>(() => {
         const currentMember = members.find((m) => m.userId === currentUserId);
@@ -99,8 +137,12 @@ export function ProjectCanvas({
             setNodes(result.nodes);
             setEdges(result.edges);
             setActiveViewId(viewId);
-        } catch {
-            toast.error("Failed to load view");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsLoading(false);
         }
@@ -140,8 +182,12 @@ export function ProjectCanvas({
     useEffect(() => {
         MemberController.getAll(organizationId)
             .then(setMembers)
-            .catch(() => {
-                toast.error("Failed to load organization members");
+            .catch((error: unknown) => {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred",
+                );
             });
     }, [organizationId]);
 
@@ -155,15 +201,18 @@ export function ProjectCanvas({
         C4ModelController.updateNodePosition(projectId, activeViewId, node.id, {
             x: Math.round(node.position.x),
             y: Math.round(node.position.y),
-        }).catch(() => {
-            toast.error("Failed to save node position");
+        }).catch((error: unknown) => {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         });
     }
 
     // API key handlers
     function handleOpenApiKeysModal(): void {
         setIsApiKeysModalOpen(true);
-        // Refresh API keys when modal opens
         refreshApiKeys();
     }
 
@@ -175,8 +224,12 @@ export function ProjectCanvas({
                 projectId,
             );
             setApiKeys(updatedKeys);
-        } catch {
-            toast.error("Failed to load API keys");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsApiKeysLoading(false);
         }
@@ -199,28 +252,30 @@ export function ProjectCanvas({
                 duration: 10000,
             });
 
-            // Add the newly created key with full key to state
             const newKeyWithFull: ApiKeyWithFull = {
                 id: result.id,
                 projectId: result.projectId,
                 memberId: result.memberId,
-                apiKeyPrefix: result.apiKey.slice(0, 8), // Extract prefix from full key
+                apiKeySecret: result.apiKey.slice(0, 8),
                 lastUsedAt: "",
                 createdAt: result.createdAt,
-                fullKey: result.apiKey, // Store the full key
+                fullKey: result.apiKey,
             };
 
             setApiKeys((prev) => [newKeyWithFull, ...prev]);
             setIsCreateModalOpen(false);
-        } catch {
-            toast.error("Failed to create API key");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsCreatingApiKey(false);
         }
     }
 
     async function handleRevokeApiKey(apiKeyId: string): Promise<void> {
-        // Optimistic update
         setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));
 
         try {
@@ -230,9 +285,8 @@ export function ProjectCanvas({
                 apiKeyId,
             );
         } catch (error) {
-            // Revert on error
             await refreshApiKeys();
-            throw error; // Re-throw so modal can handle it
+            throw error;
         }
     }
 
@@ -277,7 +331,6 @@ export function ProjectCanvas({
                 onNodeDragStop={handleNodeDragStop}
                 nodeTypes={c4NodeTypes}
                 edgeTypes={edgeTypes}
-                colorMode="dark"
                 fitView
                 fitViewOptions={{ padding: 0.2 }}
                 minZoom={0.1}
@@ -293,16 +346,6 @@ export function ProjectCanvas({
                     position="bottom-right"
                     showInteractive={false}
                     className="!bg-background/80 !border-border !shadow-sm [&>button]:!bg-background [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-muted"
-                />
-                <MiniMap
-                    position="top-right"
-                    className="!bg-background/80 !border-border !shadow-sm"
-                    maskColor="hsl(var(--background) / 0.6)"
-                    nodeColor={(node) => {
-                        const nodeType = (node.data as C4NodeData)?.nodeType;
-                        return nodeType ? NODE_STYLES[nodeType].bg : "#438DD5";
-                    }}
-                    style={{ marginLeft: "18rem" }}
                 />
             </ReactFlow>
 

@@ -1,20 +1,30 @@
 "use server";
 
 import { api } from "@/lib/api";
+import { ApiError } from "@/lib/api-error";
 import type {
     CreateApiKeyRequest,
     ProjectApiKeyCreatedResponse,
     ProjectApiKeyResponse,
 } from "./types";
 
+function extractErrorMessage(error: unknown): string {
+    if (error instanceof ApiError) return error.message;
+    return "An unexpected error occurred";
+}
+
 export async function listApiKeys(
     organizationId: string,
     projectId: string,
 ): Promise<ProjectApiKeyResponse[]> {
-    const { data } = await api.get<ProjectApiKeyResponse[]>(
-        `/api/v1/organizations/${organizationId}/projects/${projectId}/api-keys`,
-    );
-    return data;
+    try {
+        const { data } = await api.get<ProjectApiKeyResponse[]>(
+            `/api/v1/organizations/${organizationId}/projects/${projectId}/api-keys`,
+        );
+        return data;
+    } catch (error) {
+        throw new Error(extractErrorMessage(error));
+    }
 }
 
 export async function createApiKey(
@@ -22,11 +32,15 @@ export async function createApiKey(
     projectId: string,
     request: CreateApiKeyRequest,
 ): Promise<ProjectApiKeyCreatedResponse> {
-    const { data } = await api.post<ProjectApiKeyCreatedResponse>(
-        `/api/v1/organizations/${organizationId}/projects/${projectId}/api-keys`,
-        request,
-    );
-    return data;
+    try {
+        const { data } = await api.post<ProjectApiKeyCreatedResponse>(
+            `/api/v1/organizations/${organizationId}/projects/${projectId}/api-keys`,
+            request,
+        );
+        return data;
+    } catch (error) {
+        throw new Error(extractErrorMessage(error));
+    }
 }
 
 export async function revokeApiKey(
@@ -34,7 +48,11 @@ export async function revokeApiKey(
     projectId: string,
     apiKeyId: string,
 ): Promise<void> {
-    await api.delete(
-        `/api/v1/organizations/${organizationId}/projects/${projectId}/api-keys/${apiKeyId}`,
-    );
+    try {
+        await api.delete(
+            `/api/v1/organizations/${organizationId}/projects/${projectId}/api-keys/${apiKeyId}`,
+        );
+    } catch (error) {
+        throw new Error(extractErrorMessage(error));
+    }
 }

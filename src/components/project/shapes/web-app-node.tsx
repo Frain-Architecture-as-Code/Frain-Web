@@ -2,8 +2,14 @@
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import type { C4NodeData } from "@/components/project/elk-layout";
-import { NODE_HEIGHT, NODE_STYLES, NODE_WIDTH } from "./constants";
+import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
+import { useTheme } from "next-themes";
+
+const COLOURS = {
+    dark: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
+    light: { bg: "#BFD9F5", stroke: "#2B6CB0", text: "#0D2B4E" },
+};
 
 /**
  * WebAppNode - Browser window shape for web applications
@@ -11,7 +17,8 @@ import { NodeContent } from "./node-content";
  */
 export function WebAppNode(props: NodeProps) {
     const data = props.data as C4NodeData;
-    const s = NODE_STYLES.WEB_APP;
+    const { theme } = useTheme();
+    const s = COLOURS[theme as "dark" | "light"];
     const w = NODE_WIDTH.WEB_APP;
     const h = NODE_HEIGHT.WEB_APP;
 
@@ -19,6 +26,8 @@ export function WebAppNode(props: NodeProps) {
     const barH = 24;
     const dotR = 3.5;
     const dotY = barH / 2;
+    const urlBarFill =
+        theme === "light" ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.15)";
 
     return (
         <div style={{ position: "relative", width: w, height: h }}>
@@ -67,7 +76,7 @@ export function WebAppNode(props: NodeProps) {
                     width={w - 66}
                     height={10}
                     rx={3}
-                    fill="rgba(255,255,255,0.15)"
+                    fill={urlBarFill}
                 />
                 <NodeContent
                     data={data}

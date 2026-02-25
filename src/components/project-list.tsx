@@ -43,6 +43,7 @@ import type {
     ProjectResponse,
     ProjectVisibility,
 } from "@/services/projects/types";
+import { useUserPreferences, type ViewMode } from "@/stores/user-preferences";
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -86,8 +87,12 @@ function CreateProjectDialog({ organizationId }: { organizationId: string }) {
             setVisibility("PUBLIC");
             router.refresh();
             toast.success("Project created successfully");
-        } catch {
-            toast.error("Failed to create project");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -233,8 +238,6 @@ function ProjectGridItem({
     );
 }
 
-type ViewMode = "list" | "grid";
-
 export function ProjectList({
     projects,
     organizationId,
@@ -244,7 +247,10 @@ export function ProjectList({
     organizationId: string;
     organizationName: string;
 }) {
-    const [viewMode, setViewMode] = useState<ViewMode>("list");
+    const viewMode = useUserPreferences((state) => state.projectsViewMode);
+    const setViewMode = useUserPreferences(
+        (state) => state.setProjectsViewMode,
+    );
     const [projectDetailsMap, setProjectDetailsMap] = useState<
         Map<string, GetProjectDetailsResponse>
     >(new Map());

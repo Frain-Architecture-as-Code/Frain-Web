@@ -1,12 +1,6 @@
 "use client";
 
-import {
-    Building2,
-    FolderKanban,
-    LayoutDashboard,
-    Settings,
-    Users,
-} from "lucide-react";
+import { Building2, FolderKanban, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -25,11 +19,6 @@ import { useOrg } from "@/contexts/org-context";
 
 function getNavigation(orgId: string) {
     return [
-        {
-            title: "Overview",
-            href: `/dashboard/${orgId}`,
-            icon: LayoutDashboard,
-        },
         {
             title: "Projects",
             href: `/dashboard/${orgId}/projects`,

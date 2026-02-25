@@ -1,11 +1,10 @@
-import { ArrowLeft, Home, LogIn, ShieldX, UserPlus } from "lucide-react";
-import Link from "next/link";
-import { BlurFade } from "@/components/ui/blur-fade";
+import FallbackLayout from "@/components/fallback-layout";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
-import FallbackLayout from "@/components/fallback-layout";
+import { ArrowLeft, Home, LogIn, UserPlus } from "lucide-react";
+import Link from "next/link";
 
-export default async function UnauthorizedPage() {
+export default async function Page() {
     const session = await auth();
     const isAuthenticated = !!session?.user;
 

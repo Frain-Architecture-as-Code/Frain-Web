@@ -1,9 +1,9 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
+import { Home, LogOut, Moon, Sun, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOutAction } from "@/services/auth/actions/auth";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -12,6 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { signOutAction } from "@/services/auth/actions/auth";
 
 type UserMenuProps = {
     user: {
@@ -38,6 +39,7 @@ function getInitials(name?: string | null, email?: string | null): string {
 
 export function UserMenu({ user }: UserMenuProps) {
     const router = useRouter();
+    const { theme, setTheme } = useTheme();
 
     const handleSignOut = async () => {
         await signOutAction();
@@ -66,10 +68,25 @@ export function UserMenu({ user }: UserMenuProps) {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                    <Link href="/">
+                        <Home className="mr-2 h-4 w-4" />
+                        Home
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/dashboard/profile">
                         <User className="mr-2 h-4 w-4" />
                         Profile
                     </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={() =>
+                        setTheme(theme === "dark" ? "light" : "dark")
+                    }
+                >
+                    <Sun className="mr-2 h-4 w-4 dark:hidden" />
+                    <Moon className="mr-2 hidden h-4 w-4 dark:block" />
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>

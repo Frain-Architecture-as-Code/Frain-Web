@@ -15,7 +15,6 @@
  */
 
 export { ComponentNode } from "./shapes/component-node";
-export { NODE_STYLES } from "./shapes/constants";
 export { DatabaseNode } from "./shapes/database-node";
 export { PersonNode } from "./shapes/person-node";
 export {

@@ -206,8 +206,12 @@ export function MemberList({
             toast.success("Name updated successfully.");
             setEditDialogOpen(false);
             router.refresh();
-        } catch {
-            toast.error("Failed to update name.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsUpdating(false);
         }
@@ -232,8 +236,12 @@ export function MemberList({
             toast.success("Role updated successfully.");
             setRoleDialogOpen(false);
             router.refresh();
-        } catch {
-            toast.error("Failed to update role.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsChangingRole(false);
         }
@@ -253,8 +261,12 @@ export function MemberList({
             );
             setKickAlertOpen(false);
             router.refresh();
-        } catch {
-            toast.error("Failed to remove member.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setIsKicking(false);
         }
