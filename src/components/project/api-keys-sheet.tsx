@@ -91,7 +91,7 @@ export function ApiKeysSheet({
     }
 
     function handleCopyKey(key: ApiKeyWithFull): void {
-        navigator.clipboard.writeText(key.apiKeyPrefix);
+        navigator.clipboard.writeText(key.apiKeySecret);
         toast.success("API key copied to clipboard");
     }
 
@@ -140,7 +140,7 @@ export function ApiKeysSheet({
     function renderKeyDisplay(key: ApiKeyWithFull): React.ReactNode {
         return (
             <span className="font-mono text-xs">
-                {key.apiKeyPrefix.slice(0, 16)}...
+                {key.apiKeySecret.slice(0, 16)}...
             </span>
         );
     }
@@ -251,7 +251,7 @@ export function ApiKeysSheet({
                                                             onClick={() =>
                                                                 handleRevokeClick(
                                                                     key.id,
-                                                                    key.apiKeyPrefix,
+                                                                    key.apiKeySecret,
                                                                     key.memberId,
                                                                 )
                                                             }

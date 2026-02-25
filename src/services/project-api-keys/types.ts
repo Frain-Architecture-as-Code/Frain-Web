@@ -6,7 +6,7 @@ export interface ProjectApiKeyResponse {
     id: string;
     projectId: string;
     memberId: string;
-    apiKeyPrefix: string;
+    apiKeySecret: string;
     lastUsedAt: string;
     createdAt: string;
 }
