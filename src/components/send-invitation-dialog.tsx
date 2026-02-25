@@ -2,6 +2,7 @@
 
 import { Plus, Shield, User } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -32,22 +33,30 @@ export function SendInvitationDialog({ orgId }: { orgId: string }) {
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    function handleSubmit(event: React.FormEvent) {
+    async function handleSubmit(event: React.FormEvent): Promise<void> {
         event.preventDefault();
 
         if (!email.trim()) return;
 
-        InvitationController.send(orgId, { role, targetEmail: email });
-
         setIsSubmitting(true);
-
-        // TODO: Wire up to InvitationController.send()
-        setTimeout(() => {
-            setIsSubmitting(false);
+        try {
+            await InvitationController.send(orgId, {
+                role,
+                targetEmail: email,
+            });
+            toast.success("Invitation sent successfully!");
             setOpen(false);
             setEmail("");
             setRole(InvitationRole.CONTRIBUTOR);
-        }, 500);
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to send invitation",
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     return (

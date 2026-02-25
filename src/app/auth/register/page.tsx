@@ -18,13 +18,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { generateAvatarFile } from "@/lib/utils";
+import { uploadToCloudinary } from "@/services/cloudinary/actions";
 
 export default function RegisterPage() {
     const router = useRouter();
 
     const [state, formAction, isPending] = useActionState(
         async (_prev: AuthResult | null, formData: FormData) => {
-            const result = await registerAction(formData);
+            const userPicture = await generateAvatarFile(
+                formData.get("name") as string,
+            );
+            const userPictureUrl = await uploadToCloudinary(userPicture);
+            const result = await registerAction(formData, userPictureUrl);
             return result;
         },
         null,
