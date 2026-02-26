@@ -5,6 +5,7 @@ import type { C4NodeData } from "@/components/project/elk-layout";
 import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
 import { useTheme } from "next-themes";
+import { NodeType } from "@/services/c4models/types";
 
 const COLOURS = {
     dark: { bg: "#003668", stroke: "#003668", text: "#ffffff" },
@@ -64,7 +65,7 @@ export function PersonNode(props: NodeProps) {
                 />
                 <NodeContent
                     data={data}
-                    nodeType="PERSON"
+                    nodeType={NodeType.PERSON}
                     textColor={s.text}
                     x={0}
                     y={bodyTop}

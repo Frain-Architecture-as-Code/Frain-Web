@@ -1,11 +1,12 @@
-export type NodeType =
-    | "PERSON"
-    | "SYSTEM"
-    | "EXTERNAL_SYSTEM"
-    | "DATABASE"
-    | "WEB_APP"
-    | "CONTAINER"
-    | "COMPONENT";
+export enum NodeType {
+    PERSON = "PERSON",
+    SYSTEM = "SYSTEM",
+    EXTERNAL_SYSTEM = "EXTERNAL_SYSTEM",
+    DATABASE = "DATABASE",
+    WEB_APP = "WEB_APP",
+    CONTAINER = "CONTAINER",
+    COMPONENT = "COMPONENT",
+}
 
 export type ViewType = "CONTEXT" | "CONTAINER" | "COMPONENT";
 
