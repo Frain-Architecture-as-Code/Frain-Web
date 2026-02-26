@@ -196,7 +196,7 @@ export function MemberList({
             const updated = await MemberController.update(
                 orgId,
                 editingMember.memberId,
-                { newName: { value: editName.trim() } },
+                { newName: editName.trim() },
             );
             setMembers((prev) =>
                 prev.map((m) =>

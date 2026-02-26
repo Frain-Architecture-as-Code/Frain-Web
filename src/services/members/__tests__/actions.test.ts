@@ -13,9 +13,8 @@ vi.mock("@/lib/api", () => ({
 }));
 
 const { api } = await import("@/lib/api");
-const { getMembers, updateMember, kickMember } = await import(
-    "@/services/members/actions"
-);
+const { getMembers, updateMember, kickMember } =
+    await import("@/services/members/actions");
 
 const mockGet = api.get as Mock;
 const mockPatch = api.patch as Mock;
@@ -72,7 +71,7 @@ describe("updateMember", () => {
         const updated = { ...sampleMember, memberName: "Updated Name" };
         mockPatch.mockResolvedValue({ data: updated });
 
-        const request = { newName: { value: "Updated Name" } };
+        const request = { newName: "Updated Name" };
         const result = await updateMember("org-1", "member-1", request);
 
         expect(mockPatch).toHaveBeenCalledWith(
