@@ -15,6 +15,8 @@ export interface ProjectApiKeyCreatedResponse {
     id: string;
     projectId: string;
     memberId: string;
-    apiKey: string;
+    apiKeySecret: string;
+    lastUsedAt: string | null;
     createdAt: string;
+    updatedAt: string;
 }

@@ -36,7 +36,10 @@ export async function loginAction(formData: FormData): Promise<AuthResult> {
     }
 }
 
-export async function registerAction(formData: FormData): Promise<AuthResult> {
+export async function registerAction(
+    formData: FormData,
+    userPictureUrl: string,
+): Promise<AuthResult> {
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -69,6 +72,7 @@ export async function registerAction(formData: FormData): Promise<AuthResult> {
             name,
             email,
             password: hashedPassword,
+            image: userPictureUrl,
         },
     });
 

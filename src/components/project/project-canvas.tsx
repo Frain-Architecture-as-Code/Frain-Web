@@ -248,7 +248,7 @@ export function ProjectCanvas({
                 { targetMemberId: memberId },
             );
             toast.success("API key created", {
-                description: `Key: ${result.apiKey}`,
+                description: `Key: ${result.apiKeySecret}`,
                 duration: 10000,
             });
 
@@ -256,10 +256,10 @@ export function ProjectCanvas({
                 id: result.id,
                 projectId: result.projectId,
                 memberId: result.memberId,
-                apiKeySecret: result.apiKey.slice(0, 8),
-                lastUsedAt: "",
+                apiKeySecret: result.apiKeySecret.slice(0, 8),
+                lastUsedAt: result.lastUsedAt ?? "",
                 createdAt: result.createdAt,
-                fullKey: result.apiKey,
+                fullKey: result.apiKeySecret,
             };
 
             setApiKeys((prev) => [newKeyWithFull, ...prev]);
