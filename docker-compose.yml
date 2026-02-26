@@ -1,0 +1,16 @@
+services:
+    postgres:
+        image: postgres:16-alpine
+        container_name: frain-db
+        restart: unless-stopped
+        ports:
+            - "5433:5432"
+        environment:
+            POSTGRES_USER: frain
+            POSTGRES_PASSWORD: frain
+            POSTGRES_DB: frain
+        volumes:
+            - frain_data:/var/lib/postgresql/data
+
+volumes:
+    frain_data:

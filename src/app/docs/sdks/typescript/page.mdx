@@ -1,0 +1,199 @@
+export const metadata = {
+    title: "Frain TypeScript SDK",
+    description: "Architecture as Code — Define, visualize, and deploy your C4 model diagrams programmatically.",
+};
+
+# Frain TypeScript SDK
+
+Architecture as Code — Define, visualize, and deploy your C4 model diagrams programmatically.
+
+## Installation
+```bash
+npm install @jonatanfd/frain-ts-sdk
+bun add @jonatanfd/frain-ts-sdk
+```
+
+## Configuration
+
+Create a `.env` file in the root of your project:
+```bash
+FRAIN_API_URL="https://your-frain-api-url.com"
+```
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `FRAIN_API_URL` | Yes (for `deploy()`) | Base URL of the Frain API. Must be a valid URL. |
+
+> The `FRAIN_API_URL` is only required when calling `deploy()`. If you only use `build()` to generate the JSON output locally, you don't need it.
+
+You also need the following credentials passed directly to the SDK constructor:
+
+| Parameter | Description |
+| --- | --- |
+| `apiKey` | Your Frain API key (e.g. `frain_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`) |
+| `projectId` | The UUID of your Frain project |
+
+## Quick Start
+```typescript
+import { Frain } from "@jonatanfd/frain-ts-sdk";
+
+const frain = new Frain({
+    apiKey: "frain_your-api-key",
+    projectId: "your-project-uuid",
+    title: "My Project",
+    description: "Architecture diagram for My Project",
+});
+
+await frain.deploy();
+```
+
+## Core Concepts
+
+The SDK follows the [C4 Model](https://c4model.com/) for visualizing software architecture at different levels of abstraction.
+
+### Frain Instance
+
+The `Frain` class is the entry point. It holds your project configuration and manages all views.
+
+| Parameter | Type | Constraints |
+| --- | --- | --- |
+| `apiKey` | `string` | Non-empty |
+| `projectId` | `string` | Valid UUID |
+| `title` | `string` | 1–255 characters |
+| `description` | `string` | 1–500 characters |
+
+### Views
+
+Views represent different levels of the C4 model:
+
+| View | C4 Level | Description |
+| --- | --- | --- |
+| **ContextView** | Level 1 | Shows the system in scope, the people who use it, and the external systems it interacts with. |
+| **ContainerView** | Level 2 | Zooms into a system to show its containers (applications, databases, etc.). |
+| **ComponentView** | Level 3 | Zooms into a container to show its internal components. |
+
+### Nodes
+
+| Node | Available In | Description |
+| --- | --- | --- |
+| `Person` | ContextView | A user or actor |
+| `System` | ContextView | A software system you own |
+| `ExternalSystem` | ContextView | A software system outside your control |
+| `Container` | ContainerView | An application, data store, or service within a system |
+| `Component` | ComponentView | An internal component within a container |
+
+### Relationships
+
+Use the `.use()` method on any node to create a directed relationship to another node.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `target` | `FrainNode` | The target node |
+| `description` | `string` | Label for the relationship (e.g. `"uses"`, `"reads from"`) |
+| `technology` | `string` | Technology or protocol (e.g. `"REST/HTTPS"`) |
+
+### Node Types (Styling)
+
+You can change the visual representation of a node using `setType()`:
+
+| Value | Description |
+| --- | --- |
+| `NodeType.Person` | Person |
+| `NodeType.System` | Internal system |
+| `NodeType.ExternalSystem` | External system |
+| `NodeType.Database` | Database |
+| `NodeType.WebApp` | Web application |
+| `NodeType.Container` | Container |
+| `NodeType.Component` | Component |
+
+## API Reference
+
+### Frain
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `createContextView()` | `ContextView` | Creates a new context-level view |
+| `createContainerView(system)` | `ContainerView` | Creates a container-level view scoped to a System |
+| `createComponentView(container)` | `ComponentView` | Creates a component-level view scoped to a Container |
+| `build()` | `Promise<object>` | Serializes all views to JSON and writes `output.json` |
+| `deploy()` | `Promise<AxiosResponse>` | Builds and deploys the model to the Frain API |
+
+### ContextView
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `addPerson({ name, description })` | `Person` | Adds a person to the view |
+| `addSystem({ name, description })` | `System` | Adds a system to the view |
+| `addExternalSystem({ name, description })` | `ExternalSystem` | Adds an external system to the view |
+| `addNodes(nodes)` | `void` | Adds external nodes from other views |
+
+### ContainerView
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `addContainer({ name, description, technology })` | `Container` | Adds a container to the view |
+| `addNodes(nodes)` | `void` | Adds external nodes from other views |
+
+### ComponentView
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `addComponent({ name, description, technology })` | `Component` | Adds a component to the view |
+| `addNodes(nodes)` | `void` | Adds external nodes from other views |
+
+### Nodes
+
+| Method | Description |
+| --- | --- |
+| `use(target, description, technology)` | Creates a relationship to another node |
+| `setType(type: NodeType)` | Changes the node's visual type |
+
+## Full Example
+```typescript
+import { Frain, NodeType } from "@jonatanfd/frain-ts-sdk";
+
+async function main() {
+    const frain = new Frain({
+        apiKey: "frain_your-api-key",
+        projectId: "your-project-uuid",
+        title: "ACME",
+        description: "This is a sample application",
+    });
+
+    // Context View (Level 1)
+    const context = frain.createContextView();
+    const commonPerson = context.addPerson({ name: "John Doe", description: "A person" });
+    const frainSystem = context.addSystem({ name: "Frain", description: "A system" });
+    const paypal = context.addExternalSystem({ name: "Paypal", description: "An external system" });
+
+    commonPerson.use(frainSystem, "uses", "");
+    frainSystem.use(paypal, "uses", "As payment gateway");
+
+    // Container View (Level 2)
+    const container = frain.createContainerView(frainSystem);
+    const webapp = container.addContainer({ name: "Web App", description: "A web application", technology: "Next Js" });
+    const api = container.addContainer({ name: "API", description: "A Restfull API", technology: "Spring Boot" });
+    const db = container.addContainer({ name: "Database", description: "A database", technology: "PostgreSQL" });
+
+    webapp.use(api, "uses", "As API");
+    api.use(db, "uses", "As database");
+    api.use(paypal, "uses", "As payment gateway");
+    commonPerson.use(webapp, "uses", "");
+    db.setType(NodeType.Database);
+    container.addNodes([commonPerson, paypal]);
+
+    // Component View (Level 3)
+    const apiView = frain.createComponentView(api);
+    const sharedKernel = apiView.addComponent({ name: "Shared Kernel", description: "A shared kernel", technology: "Spring Boot" });
+    const payments = apiView.addComponent({ name: "Payments", description: "A payments component", technology: "Spring Boot" });
+
+    payments.use(paypal, "uses", "As payment gateway");
+    payments.use(sharedKernel, "uses", "As shared kernel");
+    webapp.use(payments, "uses", "As payment gateway");
+    apiView.addNodes([paypal, webapp]);
+
+    await frain.deploy();
+}
+
+await main();
+```
