@@ -285,10 +285,10 @@ export function MemberList({
             <BlurFade delay={0.05}>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
+                        <h1 className="text-3xl font-bold tracking-tight">
                             Members
                         </h1>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground">
                             People in {organizationName}.
                         </p>
                     </div>

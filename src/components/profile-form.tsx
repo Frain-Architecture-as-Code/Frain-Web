@@ -217,10 +217,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <div className="mx-auto w-full max-w-2xl space-y-8 py-4">
             <BlurFade delay={0.05}>
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold tracking-tight">
+                    <h1 className="text-3xl font-bold tracking-tight">
                         My Account
                     </h1>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                         Manage your Frain account.
                     </p>
                 </div>
