@@ -12,7 +12,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
     ApiKeysSheet,
@@ -20,7 +20,12 @@ import {
 } from "@/components/project/api-keys-sheet";
 import { c4NodeTypes } from "@/components/project/c4-nodes";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
-import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
+import {
+    type C4NodeData,
+    GROUP_WRAPPER_ID,
+    buildGroupWrapperNode,
+    layoutNodes,
+} from "@/components/project/elk-layout";
 import { FloatingEdge } from "@/components/project/floating-edge";
 import { ProjectSidebar } from "@/components/project/project-sidebar";
 import { canViewAllKeys } from "@/lib/permissions";
@@ -47,6 +52,7 @@ interface ProjectCanvasProps {
     currentUserId: string;
     c4Model: C4ModelResponse | null;
     initialViews: ViewSummaryResponse[];
+    initialApiKeys: ProjectApiKeyResponse[];
 }
 
 const edgeTypes = {
@@ -59,6 +65,7 @@ export function ProjectCanvas({
     currentUserId,
     c4Model,
     initialViews,
+    initialApiKeys,
 }: ProjectCanvasProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node<C4NodeData>>(
         [],
@@ -68,7 +75,7 @@ export function ProjectCanvas({
     const [activeViewId, setActiveViewId] = useState<string | null>(
         initialViews[0]?.id ?? null,
     );
-    const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>([]);
+    const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>(initialApiKeys);
     const [members, setMembers] = useState<MemberResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
@@ -76,8 +83,13 @@ export function ProjectCanvas({
     const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false);
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
 
-    // resolvedTheme is always "light" or "dark" — never "system"
-    // Fall back to "dark" while next-themes is still hydrating (undefined)
+    /**
+     * Tracks which node IDs belong to the current view's internal nodes
+     * (i.e. `nodes`, not `externalNodes`). Used to filter candidates for the
+     * bounding-box recalculation on drag.
+     */
+    const internalNodeIdsRef = useRef<Set<string>>(new Set());
+
     const { theme } = useTheme();
 
     // Re-colour edges whenever the canvas theme changes
@@ -132,6 +144,11 @@ export function ProjectCanvas({
                 viewDetail.relations,
             );
 
+            // Track which IDs are internal so drag updates know what to include
+            internalNodeIdsRef.current = new Set(
+                viewDetail.nodes.map((n) => n.id),
+            );
+
             setNodes(result.nodes);
             setEdges(result.edges);
             setActiveViewId(viewId);
@@ -164,6 +181,9 @@ export function ProjectCanvas({
                 firstEmbeddedView.relations,
             )
                 .then((result) => {
+                    internalNodeIdsRef.current = new Set(
+                        firstEmbeddedView.nodes.map((n) => n.id),
+                    );
                     setNodes(result.nodes);
                     setEdges(result.edges);
                     setActiveViewId(firstEmbeddedView.id);
@@ -189,13 +209,19 @@ export function ProjectCanvas({
             });
     }, [organizationId]);
 
-    // Persist node position on drag end
+    /**
+     * On drag-stop:
+     * 1. Persist the new position to the backend (existing behaviour).
+     * 2. Recalculate the group wrapper bounding box using the updated node list
+     *    so the wrapper reacts instantly to any movement.
+     */
     function handleNodeDragStop(
         _event: React.MouseEvent,
         node: Node<C4NodeData>,
     ): void {
         if (!activeViewId) return;
 
+        // ── Persist position ──────────────────────────────────────────────────
         C4ModelController.updateNodePosition(projectId, activeViewId, node.id, {
             x: Math.round(node.position.x),
             y: Math.round(node.position.y),
@@ -204,6 +230,24 @@ export function ProjectCanvas({
                 error instanceof Error
                     ? error.message
                     : "An unexpected error occurred",
+            );
+        });
+
+        // ── Reactively resize the group wrapper ───────────────────────────────
+        setNodes((currentNodes) => {
+            // Collect only internal (non-external, non-wrapper) nodes with their
+            // latest positions as provided by React Flow after the drag.
+            const internalNodes = currentNodes.filter(
+                (n) =>
+                    n.id !== GROUP_WRAPPER_ID &&
+                    internalNodeIdsRef.current.has(n.id),
+            );
+
+            const updatedWrapper = buildGroupWrapperNode(internalNodes);
+            if (!updatedWrapper) return currentNodes;
+
+            return currentNodes.map((n) =>
+                n.id === GROUP_WRAPPER_ID ? updatedWrapper : n,
             );
         });
     }

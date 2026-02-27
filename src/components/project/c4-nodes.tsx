@@ -1,18 +1,5 @@
 /**
  * C4 Node Components - React Flow custom node types for C4 model diagrams
- *
- * This file re-exports all shape components from the shapes/ directory.
- * Each shape follows Structurizr's visual conventions for C4 model elements.
- *
- * Shape Types:
- * - PersonNode: Human silhouette (circle head + rounded body)
- * - SystemNode: Rounded rectangle (software system)
- * - ExternalSystemNode: Rounded rectangle (external system, grey)
- * - ContainerNode: Rounded rectangle (container)
- * - DatabaseNode: Cylinder (database storage)
- * - WebAppNode: Browser window (web application)
- * - ComponentNode: UML component (rectangle with side tabs)
- * - GroupWrapperNode: Visual bounding box grouping all internal nodes of a view
  */
 export { ComponentNode } from "./shapes/component-node";
 export { DatabaseNode } from "./shapes/database-node";
@@ -36,10 +23,6 @@ import {
 } from "./shapes/rounded-box-node";
 import { WebAppNode } from "./shapes/web-app-node";
 
-/**
- * React Flow node type registry
- * Maps type strings to their corresponding shape components
- */
 export const c4NodeTypes = {
     "c4-person": PersonNode,
     "c4-system": SystemNode,

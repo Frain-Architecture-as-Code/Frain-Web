@@ -45,8 +45,11 @@ export interface LayoutResult {
 /** Padding around the bounding box wrapper (px) */
 const WRAPPER_PADDING = 40;
 
-/** ID used for the group wrapper node — must not collide with real node IDs */
-const GROUP_WRAPPER_ID = "__group-wrapper__";
+/**
+ * Stable ID for the group wrapper node.
+ * Exported so consumers can filter it out (e.g. when collecting internal node IDs).
+ */
+export const GROUP_WRAPPER_ID = "__group-wrapper__";
 
 function hasPositions(nodes: FrainNodeJSON[]): boolean {
     return nodes.every(
@@ -111,9 +114,12 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
  * Computes a bounding box over the given React Flow nodes and returns a
  * `c4-group-wrapper` node that visually encloses all of them.
  *
+ * Exported so ProjectCanvas can call it on every drag-stop to keep the
+ * wrapper reactive to node movement.
+ *
  * Returns null when there are no internal nodes to wrap.
  */
-function buildGroupWrapperNode(internalNodes: Node<C4NodeData>[]): Node | null {
+export function buildGroupWrapperNode(internalNodes: Node[]): Node | null {
     if (internalNodes.length === 0) return null;
 
     let minX = Number.POSITIVE_INFINITY;
@@ -142,16 +148,12 @@ function buildGroupWrapperNode(internalNodes: Node<C4NodeData>[]): Node | null {
         id: GROUP_WRAPPER_ID,
         type: "c4-group-wrapper",
         position: { x: wrapX, y: wrapY },
-        // Disable all interaction so it doesn't interfere with the canvas
         selectable: false,
         draggable: false,
         connectable: false,
         focusable: false,
         zIndex: -1,
-        data: {
-            width: wrapW,
-            height: wrapH,
-        },
+        data: { width: wrapW, height: wrapH },
         width: wrapW,
         height: wrapH,
         style: { pointerEvents: "none" },
@@ -171,15 +173,11 @@ export async function layoutNodes(
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
-
-        // Only wrap the internal nodes (not externalNodes)
         const internalRfNodes = rfNodes.filter((n) =>
             nodes.some((orig) => orig.id === n.id),
         );
         const wrapper = buildGroupWrapperNode(internalRfNodes);
-
         return {
-            // Wrapper goes first so React Flow renders it at the bottom of the stack
             nodes: (wrapper
                 ? [wrapper, ...rfNodes]
                 : rfNodes) as Node<C4NodeData>[],
@@ -219,14 +217,12 @@ export async function layoutNodes(
         });
     });
 
-    // Only wrap the internal nodes (not externalNodes)
     const internalRfNodes = rfNodes.filter((n) =>
         nodes.some((orig) => orig.id === n.id),
     );
     const wrapper = buildGroupWrapperNode(internalRfNodes);
 
     return {
-        // Wrapper goes first so React Flow renders it at the bottom of the stack
         nodes: (wrapper
             ? [wrapper, ...rfNodes]
             : rfNodes) as Node<C4NodeData>[],

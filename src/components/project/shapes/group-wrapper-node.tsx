@@ -24,8 +24,8 @@ export interface GroupWrapperData {
  * GroupWrapperNode — a purely visual bounding box drawn behind all internal
  * nodes of a view. It has no handles and does not participate in edge routing.
  *
- * Position and dimensions are injected by layoutNodes() in elk-layout.ts after
- * the bounding box of the view's `nodes` (excluding externalNodes) is computed.
+ * Position and dimensions are computed by buildGroupWrapperNode() in
+ * elk-layout.ts, both on initial load and on every node drag-stop.
  */
 export function GroupWrapperNode(props: NodeProps) {
     const data = props.data as GroupWrapperData;
@@ -37,7 +37,6 @@ export function GroupWrapperNode(props: NodeProps) {
     const r = 16;
 
     return (
-        // noDrag / noWheel / noPan so the wrapper doesn't interfere with canvas UX
         <div
             className="nopan nodrag nowheel"
             style={{ width: w, height: h, pointerEvents: "none" }}
