@@ -248,7 +248,7 @@ export function ProjectCanvas({
 
             return currentNodes.map((n) =>
                 n.id === GROUP_WRAPPER_ID ? updatedWrapper : n,
-            );
+            ) as Node<C4NodeData>[];
         });
     }
 
