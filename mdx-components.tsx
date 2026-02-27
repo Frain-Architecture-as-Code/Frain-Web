@@ -1,7 +1,6 @@
 import type { MDXComponents } from "mdx/types";
-import { type ComponentPropsWithoutRef } from "react";
+import type { ComponentPropsWithoutRef } from "react";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import {
     Table,
     TableBody,
@@ -10,6 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export function useMDXComponents(): MDXComponents {
     return {

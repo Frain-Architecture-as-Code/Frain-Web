@@ -1,11 +1,11 @@
 "use client";
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
+import { useTheme } from "next-themes";
 import type { C4NodeData } from "@/components/project/elk-layout";
 import { NodeType } from "@/services/c4models/types";
 import { NODE_HEIGHT, NODE_LABELS, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
-import { useTheme } from "next-themes";
 
 const COLOURS: Record<
     "SYSTEM" | "EXTERNAL_SYSTEM" | "CONTAINER",

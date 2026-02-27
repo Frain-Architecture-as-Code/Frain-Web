@@ -21,9 +21,9 @@ import {
 import { c4NodeTypes } from "@/components/project/c4-nodes";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import {
+    buildGroupWrapperNode,
     type C4NodeData,
     GROUP_WRAPPER_ID,
-    buildGroupWrapperNode,
     layoutNodes,
 } from "@/components/project/elk-layout";
 import { FloatingEdge } from "@/components/project/floating-edge";

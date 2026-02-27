@@ -1,10 +1,11 @@
 "use client";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
+import { useTheme } from "next-themes";
 import type { C4NodeData } from "@/components/project/elk-layout";
+import { NodeType } from "@/services/c4models/types";
 import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
-import { useTheme } from "next-themes";
-import { NodeType } from "@/services/c4models/types";
+
 const COLOURS = {
     dark: { bg: "#50B5ED", stroke: "#50B5ED", text: "#ffffff" },
     light: { bg: "#C5EAF8", stroke: "#2190C4", text: "#003A52" },

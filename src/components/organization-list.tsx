@@ -5,11 +5,11 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { OrganizationResponse } from "@/services/organizations/types";
+import type { OrganizationResponse } from "@/services/organizations/types";
 import { useUserPreferences, type ViewMode } from "@/stores/user-preferences";
+import CreateOrganizationDialog from "./organizations/create-organization-dialog";
 import OrganizationGridItem from "./organizations/organization-grid-item";
 import OrganizationListItem from "./organizations/organization-list-item";
-import CreateOrganizationDialog from "./organizations/create-organization-dialog";
 
 export function OrganizationList({
     organizations,

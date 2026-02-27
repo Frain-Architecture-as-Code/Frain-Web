@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { filterAvailableMembers } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { MemberResponse, MemberRole } from "@/services/members/types";
+import { type MemberResponse, MemberRole } from "@/services/members/types";
 
 interface CreateApiKeyModalProps {
     open: boolean;

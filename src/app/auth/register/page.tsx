@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
-import { type AuthResult, registerAction } from "@/services/auth/actions/auth";
 import { OAuthButtons } from "@/components/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { generateAvatarFile } from "@/lib/utils";
+import { type AuthResult, registerAction } from "@/services/auth/actions/auth";
 import { uploadToCloudinary } from "@/services/cloudinary/actions";
 
 export default function RegisterPage() {

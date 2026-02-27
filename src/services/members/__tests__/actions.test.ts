@@ -13,8 +13,9 @@ vi.mock("@/lib/api", () => ({
 }));
 
 const { api } = await import("@/lib/api");
-const { getMembers, updateMember, kickMember } =
-    await import("@/services/members/actions");
+const { getMembers, updateMember, kickMember } = await import(
+    "@/services/members/actions"
+);
 
 const mockGet = api.get as Mock;
 const mockPatch = api.patch as Mock;
