@@ -1,5 +1,5 @@
-import { OrganizationVisibility } from "@/services/organizations/types";
 import { Globe, Lock } from "lucide-react";
+import { OrganizationVisibility } from "@/services/organizations/types";
 import { Badge } from "../ui/badge";
 
 export default function OrganizationVisibilityBadge({

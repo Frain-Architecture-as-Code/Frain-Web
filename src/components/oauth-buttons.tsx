@@ -1,10 +1,10 @@
 "use client";
 
-import { oauthAction } from "@/services/auth/actions/auth";
 import { Button } from "@/components/ui/button";
 import { GithubDark } from "@/components/ui/svgs/githubDark";
 import { GithubLight } from "@/components/ui/svgs/githubLight";
 import { Google } from "@/components/ui/svgs/google";
+import { oauthAction } from "@/services/auth/actions/auth";
 
 export function OAuthButtons() {
     return (

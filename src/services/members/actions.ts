@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api-error";
 import type { MemberResponse, UpdateMemberRequest } from "./types";
 
 function extractErrorMessage(error: unknown): string {
+    console.log(error);
     if (error instanceof ApiError) return error.message;
     return "An unexpected error occurred";
 }

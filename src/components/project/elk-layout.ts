@@ -1,12 +1,31 @@
 import type { Edge, Node } from "@xyflow/react";
-import ELK from "elkjs/lib/elk.bundled.js";
+import ELK from "elkjs/lib/elk-api";
 import type {
     FrainNodeJSON,
     FrainRelationJSON,
     NodeType,
 } from "@/services/c4models/types";
 
-const elk = new ELK();
+// Create a singleton ELK instance on demand, avoiding SSR execution.
+let elkInstance: ELK | null = null;
+
+function getElk(): ELK {
+    if (!elkInstance) {
+        // Check if we're in the client (browser)
+        if (typeof window !== "undefined" && typeof Worker !== "undefined") {
+            elkInstance = new ELK({
+                workerFactory: () =>
+                    new Worker(
+                        new URL("elkjs/lib/elk-worker.min.js", import.meta.url),
+                    ),
+            });
+        } else {
+            // Fallback for SSR environments
+            elkInstance = new ELK();
+        }
+    }
+    return elkInstance;
+}
 
 const NODE_WIDTH: Record<NodeType, number> = {
     PERSON: 200,
@@ -28,6 +47,33 @@ const NODE_HEIGHT: Record<NodeType, number> = {
     COMPONENT: 120,
 };
 
+const DEFAULT_LABEL_BG_PADDING: [number, number] = [8, 4];
+
+const DEFAULT_MARKER_END = {
+    type: "arrowclosed",
+    color: "var(--edge-arrow)",
+    width: 20,
+    height: 20,
+} as const;
+
+const DEFAULT_EDGE_STYLE = {
+    stroke: "var(--edge-stroke)",
+    strokeWidth: 0.75,
+    strokeDasharray: "5 5",
+};
+
+const DEFAULT_LABEL_STYLE = {
+    fontSize: 11,
+    fill: "var(--edge-label)",
+    fontWeight: 500,
+};
+
+const DEFAULT_LABEL_BG_STYLE = {
+    fill: "hsl(var(--background))",
+    fillOpacity: 1,
+};
+// --------------------------------------------------------------------------------
+
 export interface C4NodeData {
     label: string;
     description: string;
@@ -41,6 +87,9 @@ export interface LayoutResult {
     nodes: Node<C4NodeData>[];
     edges: Edge[];
 }
+
+const WRAPPER_PADDING = 40;
+export const GROUP_WRAPPER_ID = "__group-wrapper__";
 
 function hasPositions(nodes: FrainNodeJSON[]): boolean {
     return nodes.every(
@@ -76,28 +125,53 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
         label: relation.description,
         type: "floating",
         animated: false,
-        markerEnd: {
-            type: "arrowclosed",
-            color: "#ffffff",
-            width: 20,
-            height: 20,
-        },
-        style: {
-            stroke: "#C5C5C5",
-            strokeWidth: 0.75,
-            strokeDasharray: "5 5",
-        },
-        labelStyle: {
-            fontSize: 11,
-            fill: "#ffffff",
-            fontWeight: 500,
-        },
-        labelBgStyle: {
-            fill: "hsl(var(--background))",
-            fillOpacity: 1,
-        },
-        labelBgPadding: [8, 4] as [number, number],
+        markerEnd: DEFAULT_MARKER_END,
+        style: DEFAULT_EDGE_STYLE,
+        labelStyle: DEFAULT_LABEL_STYLE,
+        labelBgStyle: DEFAULT_LABEL_BG_STYLE,
+        labelBgPadding: DEFAULT_LABEL_BG_PADDING,
         labelBgBorderRadius: 4,
+    };
+}
+
+export function buildGroupWrapperNode(internalNodes: Node[]): Node | null {
+    if (internalNodes.length === 0) return null;
+
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    for (const n of internalNodes) {
+        const x = n.position.x;
+        const y = n.position.y;
+        const w = (n.width as number) ?? 200;
+        const h = (n.height as number) ?? 120;
+
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x + w > maxX) maxX = x + w;
+        if (y + h > maxY) maxY = y + h;
+    }
+
+    const wrapX = minX - WRAPPER_PADDING;
+    const wrapY = minY - WRAPPER_PADDING;
+    const wrapW = maxX - minX + WRAPPER_PADDING * 2;
+    const wrapH = maxY - minY + WRAPPER_PADDING * 2;
+
+    return {
+        id: GROUP_WRAPPER_ID,
+        type: "c4-group-wrapper",
+        position: { x: wrapX, y: wrapY },
+        selectable: false,
+        draggable: false,
+        connectable: false,
+        focusable: false,
+        zIndex: -1,
+        data: { width: wrapW, height: wrapH },
+        width: wrapW,
+        height: wrapH,
+        style: { pointerEvents: "none" },
     };
 }
 
@@ -109,15 +183,22 @@ export async function layoutNodes(
     const allNodes = [...nodes, ...externalNodes];
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
 
-    // If all nodes already have positions, use them directly
     if (hasPositions(allNodes)) {
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
-        return { nodes: rfNodes, edges };
+        const internalRfNodes = rfNodes.filter((n) =>
+            nodes.some((orig) => orig.id === n.id),
+        );
+        const wrapper = buildGroupWrapperNode(internalRfNodes);
+        return {
+            nodes: (wrapper
+                ? [wrapper, ...rfNodes]
+                : rfNodes) as Node<C4NodeData>[],
+            edges,
+        };
     }
 
-    // Use ELK for auto-layout
     const elkGraph = {
         id: "root",
         layoutOptions: {
@@ -139,6 +220,7 @@ export async function layoutNodes(
         })),
     };
 
+    const elk = getElk();
     const layoutedGraph = await elk.layout(elkGraph);
 
     const rfNodes = allNodes.map((n) => {
@@ -149,5 +231,15 @@ export async function layoutNodes(
         });
     });
 
-    return { nodes: rfNodes, edges };
+    const internalRfNodes = rfNodes.filter((n) =>
+        nodes.some((orig) => orig.id === n.id),
+    );
+    const wrapper = buildGroupWrapperNode(internalRfNodes);
+
+    return {
+        nodes: (wrapper
+            ? [wrapper, ...rfNodes]
+            : rfNodes) as Node<C4NodeData>[],
+        edges,
+    };
 }

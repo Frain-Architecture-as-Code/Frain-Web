@@ -1,11 +1,11 @@
 "use client";
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
+import { useTheme } from "next-themes";
 import type { C4NodeData } from "@/components/project/elk-layout";
-import type { NodeType } from "@/services/c4models/types";
+import { NodeType } from "@/services/c4models/types";
 import { NODE_HEIGHT, NODE_LABELS, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
-import { useTheme } from "next-themes";
 
 const COLOURS: Record<
     "SYSTEM" | "EXTERNAL_SYSTEM" | "CONTAINER",
@@ -95,7 +95,12 @@ export function RoundedBoxNode({ data, nodeType }: RoundedBoxNodeProps) {
  * SystemNode - Software System (internal to the diagram)
  */
 export function SystemNode(props: NodeProps) {
-    return <RoundedBoxNode data={props.data as C4NodeData} nodeType="SYSTEM" />;
+    return (
+        <RoundedBoxNode
+            data={props.data as C4NodeData}
+            nodeType={NodeType.SYSTEM}
+        />
+    );
 }
 
 /**
@@ -105,7 +110,7 @@ export function ExternalSystemNode(props: NodeProps) {
     return (
         <RoundedBoxNode
             data={props.data as C4NodeData}
-            nodeType="EXTERNAL_SYSTEM"
+            nodeType={NodeType.EXTERNAL_SYSTEM}
         />
     );
 }
@@ -115,6 +120,9 @@ export function ExternalSystemNode(props: NodeProps) {
  */
 export function ContainerNode(props: NodeProps) {
     return (
-        <RoundedBoxNode data={props.data as C4NodeData} nodeType="CONTAINER" />
+        <RoundedBoxNode
+            data={props.data as C4NodeData}
+            nodeType={NodeType.CONTAINER}
+        />
     );
 }
