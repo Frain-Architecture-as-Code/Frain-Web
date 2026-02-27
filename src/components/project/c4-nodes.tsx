@@ -12,10 +12,11 @@
  * - DatabaseNode: Cylinder (database storage)
  * - WebAppNode: Browser window (web application)
  * - ComponentNode: UML component (rectangle with side tabs)
+ * - GroupWrapperNode: Visual bounding box grouping all internal nodes of a view
  */
-
 export { ComponentNode } from "./shapes/component-node";
 export { DatabaseNode } from "./shapes/database-node";
+export { GroupWrapperNode } from "./shapes/group-wrapper-node";
 export { PersonNode } from "./shapes/person-node";
 export {
     ContainerNode,
@@ -26,6 +27,7 @@ export { WebAppNode } from "./shapes/web-app-node";
 
 import { ComponentNode } from "./shapes/component-node";
 import { DatabaseNode } from "./shapes/database-node";
+import { GroupWrapperNode } from "./shapes/group-wrapper-node";
 import { PersonNode } from "./shapes/person-node";
 import {
     ContainerNode,
@@ -46,4 +48,5 @@ export const c4NodeTypes = {
     "c4-web-app": WebAppNode,
     "c4-container": ContainerNode,
     "c4-component": ComponentNode,
+    "c4-group-wrapper": GroupWrapperNode,
 };

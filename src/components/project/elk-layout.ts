@@ -42,6 +42,12 @@ export interface LayoutResult {
     edges: Edge[];
 }
 
+/** Padding around the bounding box wrapper (px) */
+const WRAPPER_PADDING = 40;
+
+/** ID used for the group wrapper node — must not collide with real node IDs */
+const GROUP_WRAPPER_ID = "__group-wrapper__";
+
 function hasPositions(nodes: FrainNodeJSON[]): boolean {
     return nodes.every(
         (n) => n.x !== undefined && n.x !== 0 && n.y !== undefined && n.y !== 0,
@@ -101,6 +107,57 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
     };
 }
 
+/**
+ * Computes a bounding box over the given React Flow nodes and returns a
+ * `c4-group-wrapper` node that visually encloses all of them.
+ *
+ * Returns null when there are no internal nodes to wrap.
+ */
+function buildGroupWrapperNode(internalNodes: Node<C4NodeData>[]): Node | null {
+    if (internalNodes.length === 0) return null;
+
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    for (const n of internalNodes) {
+        const x = n.position.x;
+        const y = n.position.y;
+        const w = (n.width as number) ?? 200;
+        const h = (n.height as number) ?? 120;
+
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x + w > maxX) maxX = x + w;
+        if (y + h > maxY) maxY = y + h;
+    }
+
+    const wrapX = minX - WRAPPER_PADDING;
+    const wrapY = minY - WRAPPER_PADDING;
+    const wrapW = maxX - minX + WRAPPER_PADDING * 2;
+    const wrapH = maxY - minY + WRAPPER_PADDING * 2;
+
+    return {
+        id: GROUP_WRAPPER_ID,
+        type: "c4-group-wrapper",
+        position: { x: wrapX, y: wrapY },
+        // Disable all interaction so it doesn't interfere with the canvas
+        selectable: false,
+        draggable: false,
+        connectable: false,
+        focusable: false,
+        zIndex: -1,
+        data: {
+            width: wrapW,
+            height: wrapH,
+        },
+        width: wrapW,
+        height: wrapH,
+        style: { pointerEvents: "none" },
+    };
+}
+
 export async function layoutNodes(
     nodes: FrainNodeJSON[],
     externalNodes: FrainNodeJSON[],
@@ -109,15 +166,28 @@ export async function layoutNodes(
     const allNodes = [...nodes, ...externalNodes];
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
 
-    // If all nodes already have positions, use them directly
+    // ── Pre-positioned path ────────────────────────────────────────────────────
     if (hasPositions(allNodes)) {
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
-        return { nodes: rfNodes, edges };
+
+        // Only wrap the internal nodes (not externalNodes)
+        const internalRfNodes = rfNodes.filter((n) =>
+            nodes.some((orig) => orig.id === n.id),
+        );
+        const wrapper = buildGroupWrapperNode(internalRfNodes);
+
+        return {
+            // Wrapper goes first so React Flow renders it at the bottom of the stack
+            nodes: (wrapper
+                ? [wrapper, ...rfNodes]
+                : rfNodes) as Node<C4NodeData>[],
+            edges,
+        };
     }
 
-    // Use ELK for auto-layout
+    // ── ELK auto-layout path ───────────────────────────────────────────────────
     const elkGraph = {
         id: "root",
         layoutOptions: {
@@ -149,5 +219,17 @@ export async function layoutNodes(
         });
     });
 
-    return { nodes: rfNodes, edges };
+    // Only wrap the internal nodes (not externalNodes)
+    const internalRfNodes = rfNodes.filter((n) =>
+        nodes.some((orig) => orig.id === n.id),
+    );
+    const wrapper = buildGroupWrapperNode(internalRfNodes);
+
+    return {
+        // Wrapper goes first so React Flow renders it at the bottom of the stack
+        nodes: (wrapper
+            ? [wrapper, ...rfNodes]
+            : rfNodes) as Node<C4NodeData>[],
+        edges,
+    };
 }

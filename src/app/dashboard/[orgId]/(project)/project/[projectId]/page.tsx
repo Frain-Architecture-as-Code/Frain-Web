@@ -16,11 +16,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         C4ModelController.getViewSummaries(projectId),
     ]);
 
-    // API keys require organizationId which we don't have in this route.
-    // Pass an empty array -- the sidebar will allow creating keys once
-    // we have the org context from the project response.
-    const apiKeys: ProjectApiKeyResponse[] = [];
-
     return (
         <ProjectCanvas
             projectId={projectId}
@@ -28,7 +23,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             currentUserId={session?.user?.id || ""}
             c4Model={c4ModelResponse}
             initialViews={views}
-            initialApiKeys={apiKeys}
         />
     );
 }

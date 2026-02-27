@@ -47,7 +47,6 @@ interface ProjectCanvasProps {
     currentUserId: string;
     c4Model: C4ModelResponse | null;
     initialViews: ViewSummaryResponse[];
-    initialApiKeys: ProjectApiKeyResponse[];
 }
 
 const edgeTypes = {
@@ -60,7 +59,6 @@ export function ProjectCanvas({
     currentUserId,
     c4Model,
     initialViews,
-    initialApiKeys,
 }: ProjectCanvasProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node<C4NodeData>>(
         [],
@@ -70,7 +68,7 @@ export function ProjectCanvas({
     const [activeViewId, setActiveViewId] = useState<string | null>(
         initialViews[0]?.id ?? null,
     );
-    const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>(initialApiKeys);
+    const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>([]);
     const [members, setMembers] = useState<MemberResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
