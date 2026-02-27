@@ -6,13 +6,12 @@ import type {
     NodeType,
 } from "@/services/c4models/types";
 
-// Declaramos la variable, pero NO la instanciamos a nivel de módulo
-// para evitar que Next.js intente ejecutar el Worker durante el SSR.
+// Create a singleton ELK instance on demand, avoiding SSR execution.
 let elkInstance: ELK | null = null;
 
 function getElk(): ELK {
     if (!elkInstance) {
-        // Verificamos explícitamente que estamos en el cliente (navegador)
+        // Check if we're in the client (browser)
         if (typeof window !== "undefined" && typeof Worker !== "undefined") {
             elkInstance = new ELK({
                 workerFactory: () =>
@@ -21,7 +20,7 @@ function getElk(): ELK {
                     ),
             });
         } else {
-            // Fallback de seguridad por si alguna vez se llamara en SSR
+            // Fallback for SSR environments
             elkInstance = new ELK();
         }
     }
@@ -48,7 +47,6 @@ const NODE_HEIGHT: Record<NodeType, number> = {
     COMPONENT: 120,
 };
 
-// --- Referencias estáticas para evitar renderizados innecesarios en los Edges ---
 const DEFAULT_LABEL_BG_PADDING: [number, number] = [8, 4];
 
 const DEFAULT_MARKER_END = {
@@ -222,8 +220,6 @@ export async function layoutNodes(
         })),
     };
 
-    // Llamamos a getElk() de forma segura aquí, ya que layoutNodes
-    // es invocado desde un useEffect en el cliente.
     const elk = getElk();
     const layoutedGraph = await elk.layout(elkGraph);
 

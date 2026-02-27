@@ -190,14 +190,12 @@ export function ProjectCanvas({
         PERSIST_DEBOUNCE_MS,
     );
 
-    // Maneja la actualización visual del wrapper en tiempo real de forma optimizada
     const handleNodeDrag = useCallback(
         (_event: React.MouseEvent, draggedNode: Node<C4NodeData>) => {
             setNodes((currentNodes) => {
                 const internalNodes: Node[] = [];
                 let currentWrapper: Node | null = null;
 
-                // En una sola pasada recogemos el wrapper y los nodos internos actualizados
                 for (const n of currentNodes) {
                     if (n.id === GROUP_WRAPPER_ID) {
                         currentWrapper = n;
@@ -211,7 +209,6 @@ export function ProjectCanvas({
                 const updatedWrapper = buildGroupWrapperNode(internalNodes);
                 if (!updatedWrapper || !currentWrapper) return currentNodes;
 
-                // Bailout: si las dimensiones y posición son idénticas, no re-renderizamos
                 if (
                     currentWrapper.position.x === updatedWrapper.position.x &&
                     currentWrapper.position.y === updatedWrapper.position.y &&
@@ -221,7 +218,6 @@ export function ProjectCanvas({
                     return currentNodes;
                 }
 
-                // Actualizamos solo el wrapper en el estado de React Flow
                 return currentNodes.map((n) =>
                     n.id === GROUP_WRAPPER_ID ? updatedWrapper : n,
                 ) as Node<C4NodeData>[];
