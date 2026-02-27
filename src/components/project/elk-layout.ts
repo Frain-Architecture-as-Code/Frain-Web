@@ -1,12 +1,32 @@
 import type { Edge, Node } from "@xyflow/react";
-import ELK from "elkjs/lib/elk.bundled.js";
+import ELK from "elkjs/lib/elk-api";
 import type {
     FrainNodeJSON,
     FrainRelationJSON,
     NodeType,
 } from "@/services/c4models/types";
 
-const elk = new ELK();
+// Declaramos la variable, pero NO la instanciamos a nivel de módulo
+// para evitar que Next.js intente ejecutar el Worker durante el SSR.
+let elkInstance: ELK | null = null;
+
+function getElk(): ELK {
+    if (!elkInstance) {
+        // Verificamos explícitamente que estamos en el cliente (navegador)
+        if (typeof window !== "undefined" && typeof Worker !== "undefined") {
+            elkInstance = new ELK({
+                workerFactory: () =>
+                    new Worker(
+                        new URL("elkjs/lib/elk-worker.min.js", import.meta.url),
+                    ),
+            });
+        } else {
+            // Fallback de seguridad por si alguna vez se llamara en SSR
+            elkInstance = new ELK();
+        }
+    }
+    return elkInstance;
+}
 
 const NODE_WIDTH: Record<NodeType, number> = {
     PERSON: 200,
@@ -28,6 +48,34 @@ const NODE_HEIGHT: Record<NodeType, number> = {
     COMPONENT: 120,
 };
 
+// --- Referencias estáticas para evitar renderizados innecesarios en los Edges ---
+const DEFAULT_LABEL_BG_PADDING: [number, number] = [8, 4];
+
+const DEFAULT_MARKER_END = {
+    type: "arrowclosed",
+    color: "var(--edge-arrow)",
+    width: 20,
+    height: 20,
+} as const;
+
+const DEFAULT_EDGE_STYLE = {
+    stroke: "var(--edge-stroke)",
+    strokeWidth: 0.75,
+    strokeDasharray: "5 5",
+};
+
+const DEFAULT_LABEL_STYLE = {
+    fontSize: 11,
+    fill: "var(--edge-label)",
+    fontWeight: 500,
+};
+
+const DEFAULT_LABEL_BG_STYLE = {
+    fill: "hsl(var(--background))",
+    fillOpacity: 1,
+};
+// --------------------------------------------------------------------------------
+
 export interface C4NodeData {
     label: string;
     description: string;
@@ -42,13 +90,7 @@ export interface LayoutResult {
     edges: Edge[];
 }
 
-/** Padding around the bounding box wrapper (px) */
 const WRAPPER_PADDING = 40;
-
-/**
- * Stable ID for the group wrapper node.
- * Exported so consumers can filter it out (e.g. when collecting internal node IDs).
- */
 export const GROUP_WRAPPER_ID = "__group-wrapper__";
 
 function hasPositions(nodes: FrainNodeJSON[]): boolean {
@@ -85,40 +127,15 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
         label: relation.description,
         type: "floating",
         animated: false,
-        markerEnd: {
-            type: "arrowclosed",
-            color: "#ffffff",
-            width: 20,
-            height: 20,
-        },
-        style: {
-            stroke: "#C5C5C5",
-            strokeWidth: 0.75,
-            strokeDasharray: "5 5",
-        },
-        labelStyle: {
-            fontSize: 11,
-            fill: "#ffffff",
-            fontWeight: 500,
-        },
-        labelBgStyle: {
-            fill: "hsl(var(--background))",
-            fillOpacity: 1,
-        },
-        labelBgPadding: [8, 4] as [number, number],
+        markerEnd: DEFAULT_MARKER_END,
+        style: DEFAULT_EDGE_STYLE,
+        labelStyle: DEFAULT_LABEL_STYLE,
+        labelBgStyle: DEFAULT_LABEL_BG_STYLE,
+        labelBgPadding: DEFAULT_LABEL_BG_PADDING,
         labelBgBorderRadius: 4,
     };
 }
 
-/**
- * Computes a bounding box over the given React Flow nodes and returns a
- * `c4-group-wrapper` node that visually encloses all of them.
- *
- * Exported so ProjectCanvas can call it on every drag-stop to keep the
- * wrapper reactive to node movement.
- *
- * Returns null when there are no internal nodes to wrap.
- */
 export function buildGroupWrapperNode(internalNodes: Node[]): Node | null {
     if (internalNodes.length === 0) return null;
 
@@ -168,7 +185,6 @@ export async function layoutNodes(
     const allNodes = [...nodes, ...externalNodes];
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
 
-    // ── Pre-positioned path ────────────────────────────────────────────────────
     if (hasPositions(allNodes)) {
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
@@ -185,7 +201,6 @@ export async function layoutNodes(
         };
     }
 
-    // ── ELK auto-layout path ───────────────────────────────────────────────────
     const elkGraph = {
         id: "root",
         layoutOptions: {
@@ -207,6 +222,9 @@ export async function layoutNodes(
         })),
     };
 
+    // Llamamos a getElk() de forma segura aquí, ya que layoutNodes
+    // es invocado desde un useEffect en el cliente.
+    const elk = getElk();
     const layoutedGraph = await elk.layout(elkGraph);
 
     const rfNodes = allNodes.map((n) => {
