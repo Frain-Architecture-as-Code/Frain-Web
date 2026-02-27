@@ -7,9 +7,9 @@ import type {
 } from "@/services/c4models/types";
 
 // Create a singleton ELK instance on demand, avoiding SSR execution.
-let elkInstance: ELK | null = null;
+let elkInstance: InstanceType<typeof ELK> | null = null;
 
-function getElk(): ELK {
+function getElk(): InstanceType<typeof ELK> {
     if (!elkInstance) {
         // Check if we're in the client (browser)
         if (typeof window !== "undefined" && typeof Worker !== "undefined") {
@@ -224,7 +224,9 @@ export async function layoutNodes(
     const layoutedGraph = await elk.layout(elkGraph);
 
     const rfNodes = allNodes.map((n) => {
-        const elkNode = layoutedGraph.children?.find((c) => c.id === n.id);
+        const elkNode = layoutedGraph.children?.find(
+            (c: { id: string; x?: number; y?: number }) => c.id === n.id,
+        );
         return toReactFlowNode(n, {
             x: elkNode?.x ?? 0,
             y: elkNode?.y ?? 0,
