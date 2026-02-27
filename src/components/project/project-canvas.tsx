@@ -11,16 +11,21 @@ import {
     useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useTheme } from "next-themes";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useDebouncedCallback } from "use-debounce";
 import {
     ApiKeysSheet,
     type ApiKeyWithFull,
 } from "@/components/project/api-keys-sheet";
 import { c4NodeTypes } from "@/components/project/c4-nodes";
 import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
-import { type C4NodeData, layoutNodes } from "@/components/project/elk-layout";
+import {
+    buildGroupWrapperNode,
+    type C4NodeData,
+    GROUP_WRAPPER_ID,
+    layoutNodes,
+} from "@/components/project/elk-layout";
 import { FloatingEdge } from "@/components/project/floating-edge";
 import { ProjectSidebar } from "@/components/project/project-sidebar";
 import { canViewAllKeys } from "@/lib/permissions";
@@ -35,11 +40,11 @@ import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
-// Edge colour tokens — defined here so the canvas owns edge theming directly
-const EDGE_COLOURS = {
-    dark: { stroke: "#C5C5C5", arrow: "#ffffff", label: "#ffffff" },
-    light: { stroke: "#1A1A1A", arrow: "#1A1A1A", label: "#1A1A1A" },
-} as const;
+const PERSIST_DEBOUNCE_MS = 600;
+
+const edgeTypes = {
+    floating: FloatingEdge,
+};
 
 interface ProjectCanvasProps {
     projectId: string;
@@ -49,10 +54,6 @@ interface ProjectCanvasProps {
     initialViews: ViewSummaryResponse[];
     initialApiKeys: ProjectApiKeyResponse[];
 }
-
-const edgeTypes = {
-    floating: FloatingEdge,
-};
 
 export function ProjectCanvas({
     projectId,
@@ -66,10 +67,12 @@ export function ProjectCanvas({
         [],
     );
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
     const views = initialViews;
     const [activeViewId, setActiveViewId] = useState<string | null>(
         initialViews[0]?.id ?? null,
     );
+
     const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>(initialApiKeys);
     const [members, setMembers] = useState<MemberResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -78,39 +81,13 @@ export function ProjectCanvas({
     const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false);
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
 
-    // resolvedTheme is always "light" or "dark" — never "system"
-    // Fall back to "dark" while next-themes is still hydrating (undefined)
-    const { theme } = useTheme();
+    const internalNodeIdsRef = useRef<Set<string>>(new Set());
+    const activeViewIdRef = useRef<string | null>(activeViewId);
 
-    // Re-colour edges whenever the canvas theme changes
     useEffect(() => {
-        const c = EDGE_COLOURS[theme as "dark" | "light"];
-        setEdges((prev) =>
-            prev.map((edge) => {
-                const prevMarker =
-                    typeof edge.markerEnd === "object" &&
-                    edge.markerEnd !== null
-                        ? edge.markerEnd
-                        : {
-                              type: "arrowclosed" as const,
-                              width: 20,
-                              height: 20,
-                          };
-                return {
-                    ...edge,
-                    markerEnd: {
-                        ...prevMarker,
-                        type: prevMarker.type ?? ("arrowclosed" as const),
-                        color: c.arrow,
-                    },
-                    style: { ...edge.style, stroke: c.stroke },
-                    labelStyle: { ...edge.labelStyle, fill: c.label },
-                };
-            }),
-        );
-    }, [theme, setEdges]);
+        activeViewIdRef.current = activeViewId;
+    }, [activeViewId]);
 
-    // Derive current user's role from members array
     const currentUserRole = useMemo<MemberRole>(() => {
         const currentMember = members.find((m) => m.userId === currentUserId);
         return (
@@ -118,38 +95,41 @@ export function ProjectCanvas({
         );
     }, [members, currentUserId]);
 
-    // Check if user can access API keys management
     const canAccessApiKeys = canViewAllKeys(currentUserRole);
 
-    // Load a specific view's detail and layout
-    async function loadView(viewId: string): Promise<void> {
-        setIsLoading(true);
-        try {
-            const viewDetail: ViewDetailResponse =
-                await C4ModelController.getViewDetail(projectId, viewId);
+    const loadView = useCallback(
+        async (viewId: string) => {
+            setIsLoading(true);
+            try {
+                const viewDetail: ViewDetailResponse =
+                    await C4ModelController.getViewDetail(projectId, viewId);
 
-            const result = await layoutNodes(
-                viewDetail.nodes,
-                viewDetail.externalNodes,
-                viewDetail.relations,
-            );
+                const result = await layoutNodes(
+                    viewDetail.nodes,
+                    viewDetail.externalNodes,
+                    viewDetail.relations,
+                );
 
-            setNodes(result.nodes);
-            setEdges(result.edges);
-            setActiveViewId(viewId);
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : "An unexpected error occurred",
-            );
-        } finally {
-            setIsLoading(false);
-        }
-    }
+                internalNodeIdsRef.current = new Set(
+                    viewDetail.nodes.map((n) => n.id),
+                );
 
-    // Load the first view on mount
-    // biome-ignore lint/correctness/useExhaustiveDependencies: loadView is intentionally excluded to avoid infinite re-renders — it depends on state setters that change on every render
+                setNodes(result.nodes);
+                setEdges(result.edges);
+                setActiveViewId(viewId);
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred",
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [projectId, setNodes, setEdges],
+    );
+
     useEffect(() => {
         const firstViewId = initialViews[0]?.id;
         if (firstViewId) {
@@ -157,7 +137,6 @@ export function ProjectCanvas({
             return;
         }
 
-        // Fallback to embedded views if c4Model exists
         const firstEmbeddedView = c4Model?.c4Model?.views?.[0];
         if (firstEmbeddedView) {
             layoutNodes(
@@ -166,6 +145,9 @@ export function ProjectCanvas({
                 firstEmbeddedView.relations,
             )
                 .then((result) => {
+                    internalNodeIdsRef.current = new Set(
+                        firstEmbeddedView.nodes.map((n) => n.id),
+                    );
                     setNodes(result.nodes);
                     setEdges(result.edges);
                     setActiveViewId(firstEmbeddedView.id);
@@ -174,11 +156,9 @@ export function ProjectCanvas({
             return;
         }
 
-        // No views available - just stop loading
         setIsLoading(false);
-    }, [initialViews, c4Model, setNodes, setEdges]);
+    }, [initialViews, c4Model, setNodes, setEdges, loadView]);
 
-    // Load organization members on mount
     useEffect(() => {
         MemberController.getAll(organizationId)
             .then(setMembers)
@@ -191,26 +171,75 @@ export function ProjectCanvas({
             });
     }, [organizationId]);
 
-    // Persist node position on drag end
-    function handleNodeDragStop(
-        _event: React.MouseEvent,
-        node: Node<C4NodeData>,
-    ): void {
-        if (!activeViewId) return;
+    const persistNodePosition = useDebouncedCallback(
+        (nodeId: string, x: number, y: number) => {
+            const viewId = activeViewIdRef.current;
+            if (!viewId) return;
 
-        C4ModelController.updateNodePosition(projectId, activeViewId, node.id, {
-            x: Math.round(node.position.x),
-            y: Math.round(node.position.y),
-        }).catch((error: unknown) => {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : "An unexpected error occurred",
+            C4ModelController.updateNodePosition(projectId, viewId, nodeId, {
+                x,
+                y,
+            }).catch((error: unknown) => {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred",
+                );
+            });
+        },
+        PERSIST_DEBOUNCE_MS,
+    );
+
+    const handleNodeDrag = useCallback(
+        (_event: React.MouseEvent, draggedNode: Node<C4NodeData>) => {
+            setNodes((currentNodes) => {
+                const internalNodes: Node[] = [];
+                let currentWrapper: Node | null = null;
+
+                for (const n of currentNodes) {
+                    if (n.id === GROUP_WRAPPER_ID) {
+                        currentWrapper = n;
+                    } else if (internalNodeIdsRef.current.has(n.id)) {
+                        internalNodes.push(
+                            n.id === draggedNode.id ? draggedNode : n,
+                        );
+                    }
+                }
+
+                const updatedWrapper = buildGroupWrapperNode(internalNodes);
+                if (!updatedWrapper || !currentWrapper) return currentNodes;
+
+                if (
+                    currentWrapper.position.x === updatedWrapper.position.x &&
+                    currentWrapper.position.y === updatedWrapper.position.y &&
+                    currentWrapper.width === updatedWrapper.width &&
+                    currentWrapper.height === updatedWrapper.height
+                ) {
+                    return currentNodes;
+                }
+
+                return currentNodes.map((n) =>
+                    n.id === GROUP_WRAPPER_ID ? updatedWrapper : n,
+                ) as Node<C4NodeData>[];
+            });
+        },
+        [setNodes],
+    );
+
+    // Solo se encarga de persistir al soltar el ratón
+    const handleNodeDragStop = useCallback(
+        (_event: React.MouseEvent, node: Node<C4NodeData>) => {
+            if (!activeViewIdRef.current) return;
+
+            persistNodePosition(
+                node.id,
+                Math.round(node.position.x),
+                Math.round(node.position.y),
             );
-        });
-    }
+        },
+        [persistNodePosition],
+    );
 
-    // API key handlers
     function handleOpenApiKeysModal(): void {
         setIsApiKeysModalOpen(true);
         refreshApiKeys();
@@ -277,7 +306,6 @@ export function ProjectCanvas({
 
     async function handleRevokeApiKey(apiKeyId: string): Promise<void> {
         setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));
-
         try {
             await ProjectApiKeyController.revoke(
                 organizationId,
@@ -328,6 +356,7 @@ export function ProjectCanvas({
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
+                onNodeDrag={handleNodeDrag}
                 onNodeDragStop={handleNodeDragStop}
                 nodeTypes={c4NodeTypes}
                 edgeTypes={edgeTypes}

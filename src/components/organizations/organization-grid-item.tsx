@@ -1,9 +1,9 @@
-import { OrganizationResponse } from "@/services/organizations/types";
-import Link from "next/link";
-import { Card, CardContent } from "../ui/card";
 import { Building2, Calendar } from "lucide-react";
-import OrganizationVisibilityBadge from "./organization-visibility-badge";
+import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import type { OrganizationResponse } from "@/services/organizations/types";
+import { Card, CardContent } from "../ui/card";
+import OrganizationVisibilityBadge from "./organization-visibility-badge";
 
 export default function OrganizationGridItem({
     org,

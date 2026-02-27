@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useActionState, useEffect } from "react";
 import { toast } from "sonner";
-import { type AuthResult, loginAction } from "@/services/auth/actions/auth";
 import { OAuthButtons } from "@/components/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { type AuthResult, loginAction } from "@/services/auth/actions/auth";
 
 function LoginForm() {
     const router = useRouter();

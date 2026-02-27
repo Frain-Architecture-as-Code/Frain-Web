@@ -1,8 +1,8 @@
+import { ArrowLeft, Home, LogIn, UserPlus } from "lucide-react";
+import Link from "next/link";
 import FallbackLayout from "@/components/fallback-layout";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
-import { ArrowLeft, Home, LogIn, UserPlus } from "lucide-react";
-import Link from "next/link";
 
 export default async function Page() {
     const session = await auth();

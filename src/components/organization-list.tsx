@@ -5,11 +5,11 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { OrganizationResponse } from "@/services/organizations/types";
+import type { OrganizationResponse } from "@/services/organizations/types";
 import { useUserPreferences, type ViewMode } from "@/stores/user-preferences";
+import CreateOrganizationDialog from "./organizations/create-organization-dialog";
 import OrganizationGridItem from "./organizations/organization-grid-item";
 import OrganizationListItem from "./organizations/organization-list-item";
-import CreateOrganizationDialog from "./organizations/create-organization-dialog";
 
 export function OrganizationList({
     organizations,
@@ -26,10 +26,10 @@ export function OrganizationList({
             <BlurFade delay={0.05}>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
+                        <h1 className="text-3xl font-bold tracking-tight">
                             Organizations
                         </h1>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground">
                             Manage your organizations and their projects.
                         </p>
                     </div>

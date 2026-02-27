@@ -98,10 +98,10 @@ export default function OrgSettingsPage() {
         <div className="space-y-6">
             <BlurFade delay={0.05}>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
+                    <h1 className="text-3xl font-bold tracking-tight">
                         Settings
                     </h1>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                         Manage settings for {organization.name}.
                     </p>
                 </div>

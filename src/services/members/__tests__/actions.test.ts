@@ -72,7 +72,7 @@ describe("updateMember", () => {
         const updated = { ...sampleMember, memberName: "Updated Name" };
         mockPatch.mockResolvedValue({ data: updated });
 
-        const request = { newName: { value: "Updated Name" } };
+        const request = { newName: "Updated Name" };
         const result = await updateMember("org-1", "member-1", request);
 
         expect(mockPatch).toHaveBeenCalledWith(

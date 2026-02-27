@@ -1,5 +1,5 @@
 import type { C4NodeData } from "@/components/project/elk-layout";
-import type { NodeType } from "@/services/c4models/types";
+import { NodeType } from "@/services/c4models/types";
 import { NODE_LABELS } from "./constants";
 
 interface NodeContentProps {
@@ -12,6 +12,30 @@ interface NodeContentProps {
     height: number;
 }
 
+const contextNodeTypes = [
+    NodeType.PERSON,
+    NodeType.EXTERNAL_SYSTEM,
+    NodeType.SYSTEM,
+];
+
+const getFirstLetterUpperCaseForNodeType = (nodeType: NodeType) => {
+    switch (nodeType) {
+        case NodeType.PERSON:
+            return "Person";
+        case NodeType.EXTERNAL_SYSTEM:
+            return "External System";
+        case NodeType.SYSTEM:
+            return "System";
+        case NodeType.COMPONENT:
+            return "Component";
+        case NodeType.CONTAINER:
+            return "Container";
+        case NodeType.DATABASE:
+            return "Database";
+        default:
+            return "";
+    }
+};
 /**
  * Shared text content block rendered inside SVG foreignObject
  * Displays: node name, type label, technology, and description
@@ -29,6 +53,14 @@ export function NodeContent({
     const mutedColor =
         textColor === "#ffffff" ? "rgba(255,255,255,0.70)" : "rgba(0,0,0,0.55)";
 
+    const technologyLabel = data.technology ? `${data.technology}` : "";
+
+    console.log(nodeType);
+    console.log(contextNodeTypes);
+
+    const isAContextNode = contextNodeTypes.includes(nodeType);
+
+    const labelWithTechnology = `[${getFirstLetterUpperCaseForNodeType(nodeType)}${!isAContextNode ? " : " + technologyLabel : ""}]`;
     return (
         <foreignObject x={x} y={y} width={width} height={height}>
             <div className="w-full h-full flex flex-col items-center justify-center p-2">
@@ -53,8 +85,7 @@ export function NodeContent({
                         marginBottom: 2,
                     }}
                 >
-                    [{label.toLocaleLowerCase()}
-                    {data.technology && `: ${data.technology}`}]
+                    {labelWithTechnology}
                 </span>
                 {data.description && (
                     <span

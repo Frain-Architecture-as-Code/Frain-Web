@@ -1,10 +1,11 @@
 "use client";
 
 import { Handle, type NodeProps, Position } from "@xyflow/react";
+import { useTheme } from "next-themes";
 import type { C4NodeData } from "@/components/project/elk-layout";
+import { NodeType } from "@/services/c4models/types";
 import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
-import { useTheme } from "next-themes";
 
 const COLOURS = {
     dark: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
@@ -80,7 +81,7 @@ export function WebAppNode(props: NodeProps) {
                 />
                 <NodeContent
                     data={data}
-                    nodeType="WEB_APP"
+                    nodeType={NodeType.WEB_APP}
                     textColor={s.text}
                     x={0}
                     y={barH}
