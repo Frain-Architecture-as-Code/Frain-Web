@@ -6,12 +6,12 @@ import type {
     NodeType,
 } from "@/services/c4models/types";
 
-// Create a singleton ELK instance on demand, avoiding SSR execution.
+// Lazy singleton ELK instance (SSR-safe).
 let elkInstance: InstanceType<typeof ELK> | null = null;
 
 function getElk(): InstanceType<typeof ELK> {
     if (!elkInstance) {
-        // Check if we're in the client (browser)
+        // Use Web Worker in the browser
         if (typeof window !== "undefined" && typeof Worker !== "undefined") {
             elkInstance = new ELK({
                 workerFactory: () =>
@@ -20,7 +20,7 @@ function getElk(): InstanceType<typeof ELK> {
                     ),
             });
         } else {
-            // Fallback for SSR environments
+            // Fallback for SSR
             elkInstance = new ELK();
         }
     }
@@ -72,6 +72,7 @@ const DEFAULT_LABEL_BG_STYLE = {
     fill: "hsl(var(--background))",
     fillOpacity: 1,
 };
+
 // --------------------------------------------------------------------------------
 
 export interface C4NodeData {
@@ -92,8 +93,9 @@ const WRAPPER_PADDING = 40;
 export const GROUP_WRAPPER_ID = "__group-wrapper__";
 
 function hasPositions(nodes: FrainNodeJSON[]): boolean {
+    // Check only for valid numbers (0,0 is valid).
     return nodes.every(
-        (n) => n.x !== undefined && n.x !== 0 && n.y !== undefined && n.y !== 0,
+        (n) => typeof n.x === "number" && typeof n.y === "number",
     );
 }
 
@@ -183,13 +185,19 @@ export async function layoutNodes(
     const allNodes = [...nodes, ...externalNodes];
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
 
+    // Use Set for O(1) lookups.
+    const internalNodeIds = new Set(nodes.map((n) => n.id));
+
     if (hasPositions(allNodes)) {
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
+
+        // Fast filtering using Set.
         const internalRfNodes = rfNodes.filter((n) =>
-            nodes.some((orig) => orig.id === n.id),
+            internalNodeIds.has(n.id),
         );
+
         const wrapper = buildGroupWrapperNode(internalRfNodes);
         return {
             nodes: (wrapper
@@ -199,6 +207,7 @@ export async function layoutNodes(
         };
     }
 
+    // ELK layout configuration optimized for C4 diagrams.
     const elkGraph = {
         id: "root",
         layoutOptions: {
@@ -207,6 +216,9 @@ export async function layoutNodes(
             "elk.spacing.nodeNode": "80",
             "elk.layered.spacing.nodeNodeBetweenLayers": "100",
             "elk.padding": "[top=50,left=50,bottom=50,right=50]",
+            "elk.edgeRouting": "POLYLINE",
+            "elk.separateConnectedComponents": "true",
+            "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
         },
         children: allNodes.map((n) => ({
             id: n.id,
@@ -223,19 +235,25 @@ export async function layoutNodes(
     const elk = getElk();
     const layoutedGraph = await elk.layout(elkGraph);
 
+    // Convert ELK result to Map for O(1) access.
+    const elkPositionsMap = new Map<string, { x: number; y: number }>();
+    if (layoutedGraph.children) {
+        for (const child of layoutedGraph.children) {
+            elkPositionsMap.set(child.id, {
+                x: child.x ?? 0,
+                y: child.y ?? 0,
+            });
+        }
+    }
+
     const rfNodes = allNodes.map((n) => {
-        const elkNode = layoutedGraph.children?.find(
-            (c: { id: string; x?: number; y?: number }) => c.id === n.id,
-        );
-        return toReactFlowNode(n, {
-            x: elkNode?.x ?? 0,
-            y: elkNode?.y ?? 0,
-        });
+        const position = elkPositionsMap.get(n.id) ?? { x: 0, y: 0 };
+        return toReactFlowNode(n, position);
     });
 
-    const internalRfNodes = rfNodes.filter((n) =>
-        nodes.some((orig) => orig.id === n.id),
-    );
+    // Reuse Set for filtering internal nodes.
+    const internalRfNodes = rfNodes.filter((n) => internalNodeIds.has(n.id));
+
     const wrapper = buildGroupWrapperNode(internalRfNodes);
 
     return {
