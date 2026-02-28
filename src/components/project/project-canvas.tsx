@@ -41,6 +41,8 @@ import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Button } from "../ui/button";
+import { Focus, Layout } from "lucide-react";
 
 const PERSIST_DEBOUNCE_MS = 600;
 
@@ -51,28 +53,35 @@ const FIT_VIEW_OPTIONS = { padding: 0.2, duration: 800 };
 const PRO_OPTIONS = { hideAttribution: true };
 
 // Canvas action panel
-function FlowActions({ onRelayout }: { onRelayout: () => void }) {
+function FlowActions({ onRelayout }: { onRelayout: () => Promise<void> }) {
     const { fitView } = useReactFlow();
 
+    const onLayoutClick = async () => {
+        await onRelayout();
+        // Esperamos que React dibuje el nuevo DOM antes de centrar la cámara
+        requestAnimationFrame(() => {
+            fitView(FIT_VIEW_OPTIONS);
+        });
+    };
+
     return (
-        <Panel
-            position="bottom-right"
-            className="flex gap-2 rounded-md border border-border bg-background/90 p-1.5 shadow-sm backdrop-blur-sm"
-        >
-            <button
-                type="button"
+        <Panel position="bottom-right" className="flex gap-2">
+            <Button
+                variant={"secondary"}
+                size={"icon"}
                 onClick={() => fitView(FIT_VIEW_OPTIONS)}
-                className="rounded px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                title="Center view"
             >
-                Center View
-            </button>
-            <button
-                type="button"
-                onClick={onRelayout}
-                className="rounded px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                <Focus />
+            </Button>
+            <Button
+                variant={"secondary"}
+                size={"icon"}
+                onClick={onLayoutClick}
+                title="Layout nodes"
             >
-                Auto-Layout (ELK)
-            </button>
+                <Layout />
+            </Button>
         </Panel>
     );
 }
@@ -173,9 +182,10 @@ export function ProjectCanvas({
         [projectId, setNodes, setEdges],
     );
 
-    // Re-run ELK layout using cached data
+    // Re-run ELK layout forzando la organización y guardando las nuevas posiciones
     const handleRelayout = useCallback(async () => {
         if (!currentViewDetailRef.current) return;
+        const viewId = activeViewIdRef.current;
 
         setIsLoading(true);
         try {
@@ -189,10 +199,38 @@ export function ProjectCanvas({
                 rawNodes,
                 externalNodes,
                 relations,
+                true, // Forzamos a ELK a calcular posiciones
             );
 
             setNodes(result.nodes);
             setEdges(result.edges);
+
+            // Guardar posiciones de todos los nodos en el backend de forma concurrente
+            if (viewId) {
+                const updatePromises = result.nodes
+                    // Actualizamos solo los nodos internos (no el wrapper)
+                    .filter(
+                        (n) =>
+                            n.id !== GROUP_WRAPPER_ID &&
+                            internalNodeIdsRef.current.has(n.id),
+                    )
+                    .map((n) =>
+                        C4ModelController.updateNodePosition(
+                            projectId,
+                            viewId,
+                            n.id,
+                            {
+                                x: Math.round(n.position.x),
+                                y: Math.round(n.position.y),
+                            },
+                        ).catch((err) =>
+                            console.error("Error saving node position:", err),
+                        ),
+                    );
+
+                await Promise.all(updatePromises);
+                toast.success("Layout actualizado y guardado");
+            }
         } catch (error) {
             toast.error(
                 error instanceof Error
@@ -202,7 +240,7 @@ export function ProjectCanvas({
         } finally {
             setIsLoading(false);
         }
-    }, [setNodes, setEdges]);
+    }, [projectId, setNodes, setEdges]);
 
     // Load initial view
     useEffect(() => {

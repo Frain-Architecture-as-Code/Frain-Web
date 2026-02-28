@@ -93,10 +93,17 @@ const WRAPPER_PADDING = 40;
 export const GROUP_WRAPPER_ID = "__group-wrapper__";
 
 function hasPositions(nodes: FrainNodeJSON[]): boolean {
-    // Check only for valid numbers (0,0 is valid).
-    return nodes.every(
+    if (nodes.length === 0) return false;
+
+    const allValidNumbers = nodes.every(
         (n) => typeof n.x === "number" && typeof n.y === "number",
     );
+    if (!allValidNumbers) return false;
+
+    const allAtOrigin = nodes.every((n) => n.x === 0 && n.y === 0);
+    if (allAtOrigin) return false;
+
+    return true;
 }
 
 function toReactFlowNode(
@@ -181,6 +188,7 @@ export async function layoutNodes(
     nodes: FrainNodeJSON[],
     externalNodes: FrainNodeJSON[],
     relations: FrainRelationJSON[],
+    forceRelayout: boolean = false, // Nuevo parámetro para forzar el re-ordenamiento
 ): Promise<LayoutResult> {
     const allNodes = [...nodes, ...externalNodes];
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
@@ -188,7 +196,8 @@ export async function layoutNodes(
     // Use Set for O(1) lookups.
     const internalNodeIds = new Set(nodes.map((n) => n.id));
 
-    if (hasPositions(allNodes)) {
+    // Si no forzamos el relayout y ya existen posiciones válidas, mantenemos las actuales
+    if (!forceRelayout && hasPositions(allNodes)) {
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
@@ -207,6 +216,8 @@ export async function layoutNodes(
         };
     }
 
+    const externalNodeIds = new Set(externalNodes.map((n) => n.id));
+
     // ELK layout configuration optimized for C4 diagrams.
     const elkGraph = {
         id: "root",
@@ -214,7 +225,7 @@ export async function layoutNodes(
             "elk.algorithm": "layered",
             "elk.direction": "DOWN",
             "elk.spacing.nodeNode": "80",
-            "elk.layered.spacing.nodeNodeBetweenLayers": "100",
+            "elk.layered.spacing.nodeNodeBetweenLayers": "300",
             "elk.padding": "[top=50,left=50,bottom=50,right=50]",
             "elk.edgeRouting": "POLYLINE",
             "elk.separateConnectedComponents": "true",
@@ -256,10 +267,12 @@ export async function layoutNodes(
 
     const wrapper = buildGroupWrapperNode(internalRfNodes);
 
+    const finalNodes = (
+        wrapper ? [wrapper, ...rfNodes] : rfNodes
+    ) as Node<C4NodeData>[];
+
     return {
-        nodes: (wrapper
-            ? [wrapper, ...rfNodes]
-            : rfNodes) as Node<C4NodeData>[],
+        nodes: finalNodes,
         edges,
     };
 }
