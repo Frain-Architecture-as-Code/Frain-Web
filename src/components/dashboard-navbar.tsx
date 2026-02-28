@@ -13,12 +13,6 @@ export async function DashboardNavbar() {
             <div className="flex flex-1 items-center gap-2 px-4">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mr-2 h-4" />
-                <Link
-                    href="/dashboard"
-                    className="text-sm font-semibold tracking-tight"
-                >
-                    Frain
-                </Link>
             </div>
             <div className="flex items-center gap-2 px-4">
                 <ThemeToggle />
