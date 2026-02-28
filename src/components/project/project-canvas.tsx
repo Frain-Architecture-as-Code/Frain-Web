@@ -3,12 +3,13 @@
 import {
     Background,
     BackgroundVariant,
-    Controls,
     type Edge,
     type Node,
     ReactFlow,
     useEdgesState,
     useNodesState,
+    Panel,
+    useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -44,6 +45,37 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 const PERSIST_DEBOUNCE_MS = 600;
 
 const edgeTypes = { floating: FloatingEdge };
+
+// Static objects to prevent unnecessary ReactFlow re-renders
+const FIT_VIEW_OPTIONS = { padding: 0.2, duration: 800 };
+const PRO_OPTIONS = { hideAttribution: true };
+
+// Canvas action panel
+function FlowActions({ onRelayout }: { onRelayout: () => void }) {
+    const { fitView } = useReactFlow();
+
+    return (
+        <Panel
+            position="bottom-right"
+            className="flex gap-2 rounded-md border border-border bg-background/90 p-1.5 shadow-sm backdrop-blur-sm"
+        >
+            <button
+                type="button"
+                onClick={() => fitView(FIT_VIEW_OPTIONS)}
+                className="rounded px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+                Center View
+            </button>
+            <button
+                type="button"
+                onClick={onRelayout}
+                className="rounded px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+                Auto-Layout (ELK)
+            </button>
+        </Panel>
+    );
+}
 
 interface ProjectCanvasProps {
     projectId: string;
@@ -84,6 +116,9 @@ export function ProjectCanvas({
         currentViewId ?? initialViews[0]?.id ?? null,
     );
 
+    // Cache current view detail for local relayout
+    const currentViewDetailRef = useRef<ViewDetailResponse | null>(null);
+
     const currentUserRole = useMemo<MemberRole>(() => {
         const member = members.find((m) => m.userId === currentUserId);
         return (member?.memberRole as MemberRole) ?? MemberRole.CONTRIBUTOR;
@@ -104,8 +139,13 @@ export function ProjectCanvas({
         async (viewId: string) => {
             setIsLoading(true);
             try {
-                const viewDetail: ViewDetailResponse =
-                    await C4ModelController.getViewDetail(projectId, viewId);
+                const viewDetail = await C4ModelController.getViewDetail(
+                    projectId,
+                    viewId,
+                );
+
+                // Store for future relayouts
+                currentViewDetailRef.current = viewDetail;
 
                 const result = await layoutNodes(
                     viewDetail.nodes,
@@ -117,6 +157,7 @@ export function ProjectCanvas({
                     viewDetail.nodes.map((n) => n.id),
                 );
                 activeViewIdRef.current = viewId;
+
                 setNodes(result.nodes);
                 setEdges(result.edges);
             } catch (error) {
@@ -131,6 +172,37 @@ export function ProjectCanvas({
         },
         [projectId, setNodes, setEdges],
     );
+
+    // Re-run ELK layout using cached data
+    const handleRelayout = useCallback(async () => {
+        if (!currentViewDetailRef.current) return;
+
+        setIsLoading(true);
+        try {
+            const {
+                nodes: rawNodes,
+                externalNodes,
+                relations,
+            } = currentViewDetailRef.current;
+
+            const result = await layoutNodes(
+                rawNodes,
+                externalNodes,
+                relations,
+            );
+
+            setNodes(result.nodes);
+            setEdges(result.edges);
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Error applying layout",
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    }, [setNodes, setEdges]);
 
     // Load initial view
     useEffect(() => {
@@ -161,9 +233,9 @@ export function ProjectCanvas({
         }
 
         setIsLoading(false);
-    }, [initialViews, c4Model, setNodes, setEdges, loadView]);
+    }, [initialViews, c4Model, setNodes, setEdges, loadView, currentViewId]);
 
-    // Load members
+    // Load organization members
     useEffect(() => {
         MemberController.getAll(organizationId)
             .then(setMembers)
@@ -176,10 +248,12 @@ export function ProjectCanvas({
             });
     }, [organizationId]);
 
+    // Persist node position (debounced)
     const persistNodePosition = useDebouncedCallback(
         (nodeId: string, x: number, y: number) => {
             const viewId = activeViewIdRef.current;
             if (!viewId) return;
+
             C4ModelController.updateNodePosition(projectId, viewId, nodeId, {
                 x,
                 y,
@@ -194,6 +268,7 @@ export function ProjectCanvas({
         PERSIST_DEBOUNCE_MS,
     );
 
+    // Update wrapper while dragging internal nodes
     const handleNodeDrag = useCallback(
         (_event: React.MouseEvent, draggedNode: Node<C4NodeData>) => {
             setNodes((currentNodes) => {
@@ -229,9 +304,11 @@ export function ProjectCanvas({
         [setNodes],
     );
 
+    // Persist final position on drag stop
     const handleNodeDragStop = useCallback(
         (_event: React.MouseEvent, node: Node<C4NodeData>) => {
             if (!activeViewIdRef.current) return;
+
             persistNodePosition(
                 node.id,
                 Math.round(node.position.x),
@@ -249,7 +326,8 @@ export function ProjectCanvas({
         [updateParam, loadView],
     );
 
-    async function refreshApiKeys(): Promise<void> {
+    // Refresh API keys list
+    const refreshApiKeys = useCallback(async (): Promise<void> => {
         setIsApiKeysLoading(true);
         try {
             const updatedKeys = await ProjectApiKeyController.list(
@@ -266,64 +344,73 @@ export function ProjectCanvas({
         } finally {
             setIsApiKeysLoading(false);
         }
-    }
+    }, [organizationId, projectId]);
 
-    function handleOpenApiKeysModal(): void {
+    const handleOpenApiKeysModal = useCallback((): void => {
         setIsApiKeysModalOpen(true);
         refreshApiKeys();
-    }
+    }, [refreshApiKeys]);
 
-    async function handleCreateApiKey(memberId: string): Promise<void> {
-        setIsCreatingApiKey(true);
-        try {
-            const result = await ProjectApiKeyController.create(
-                organizationId,
-                projectId,
-                {
-                    targetMemberId: memberId,
-                },
-            );
-            toast.success("API key created", {
-                description: `Key: ${result.apiKeySecret}`,
-                duration: 10000,
-            });
-            setApiKeys((prev) => [
-                {
-                    id: result.id,
-                    projectId: result.projectId,
-                    memberId: result.memberId,
-                    apiKeySecret: result.apiKeySecret.slice(0, 8),
-                    lastUsedAt: result.lastUsedAt ?? "",
-                    createdAt: result.createdAt,
-                    fullKey: result.apiKeySecret,
-                },
-                ...prev,
-            ]);
-            setIsCreateModalOpen(false);
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : "An unexpected error occurred",
-            );
-        } finally {
-            setIsCreatingApiKey(false);
-        }
-    }
+    // Create new API key
+    const handleCreateApiKey = useCallback(
+        async (memberId: string): Promise<void> => {
+            setIsCreatingApiKey(true);
+            try {
+                const result = await ProjectApiKeyController.create(
+                    organizationId,
+                    projectId,
+                    { targetMemberId: memberId },
+                );
 
-    async function handleRevokeApiKey(apiKeyId: string): Promise<void> {
-        setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));
-        try {
-            await ProjectApiKeyController.revoke(
-                organizationId,
-                projectId,
-                apiKeyId,
-            );
-        } catch (error) {
-            await refreshApiKeys();
-            throw error;
-        }
-    }
+                toast.success("API key created", {
+                    description: `Key: ${result.apiKeySecret}`,
+                    duration: 10000,
+                });
+
+                setApiKeys((prev) => [
+                    {
+                        id: result.id,
+                        projectId: result.projectId,
+                        memberId: result.memberId,
+                        apiKeySecret: result.apiKeySecret.slice(0, 8),
+                        lastUsedAt: result.lastUsedAt ?? "",
+                        createdAt: result.createdAt,
+                        fullKey: result.apiKeySecret,
+                    },
+                    ...prev,
+                ]);
+
+                setIsCreateModalOpen(false);
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred",
+                );
+            } finally {
+                setIsCreatingApiKey(false);
+            }
+        },
+        [organizationId, projectId],
+    );
+
+    // Revoke API key
+    const handleRevokeApiKey = useCallback(
+        async (apiKeyId: string): Promise<void> => {
+            setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));
+            try {
+                await ProjectApiKeyController.revoke(
+                    organizationId,
+                    projectId,
+                    apiKeyId,
+                );
+            } catch (error) {
+                await refreshApiKeys();
+                throw error;
+            }
+        },
+        [organizationId, projectId, refreshApiKeys],
+    );
 
     return (
         <div className="relative h-full w-full">
@@ -368,21 +455,18 @@ export function ProjectCanvas({
                 nodeTypes={c4NodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
-                fitViewOptions={{ padding: 0.2 }}
+                fitViewOptions={FIT_VIEW_OPTIONS}
                 minZoom={0.1}
                 maxZoom={2}
-                proOptions={{ hideAttribution: true }}
+                proOptions={PRO_OPTIONS}
             >
                 <Background
                     variant={BackgroundVariant.Cross}
                     gap={50}
                     size={1}
                 />
-                <Controls
-                    position="bottom-right"
-                    showInteractive={false}
-                    className="!bg-background/80 !border-border !shadow-sm [&>button]:!bg-background [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-muted"
-                />
+
+                <FlowActions onRelayout={handleRelayout} />
             </ReactFlow>
 
             {isLoading && (
