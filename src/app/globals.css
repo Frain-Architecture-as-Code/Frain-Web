@@ -63,10 +63,6 @@
     --shadow-2xl: 0px 4px 10px 0px hsl(0 0% 0% / 0.25);
     --tracking-normal: 0.01em;
     --spacing: 0.25rem;
-
-    --edge-stroke: #1a1a1a;
-    --edge-arrow: #1a1a1a;
-    --edge-label: #1a1a1a;
 }
 
 .dark {
@@ -126,10 +122,6 @@
         0px 6px 15px 0px hsl(0 0% 0% / 0.3),
         0px 8px 10px -1px hsl(0 0% 0% / 0.3);
     --shadow-2xl: 0px 6px 15px 0px hsl(0 0% 0% / 0.75);
-
-    --edge-stroke: #c5c5c5;
-    --edge-arrow: #ffffff;
-    --edge-label: #ffffff;
 }
 
 @theme inline {
@@ -203,4 +195,16 @@ body {
     body {
         @apply bg-background text-foreground;
     }
+}
+
+:root {
+    --edge-stroke: #1a1a1a;
+    --edge-arrow: #1a1a1a;
+    --edge-label: #1a1a1a;
+}
+
+.dark {
+    --edge-stroke: #c5c5c5;
+    --edge-arrow: #ffffff;
+    --edge-label: #ffffff;
 }

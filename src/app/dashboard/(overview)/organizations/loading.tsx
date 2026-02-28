@@ -1,17 +1,12 @@
 "use client";
-
 import CreateOrganizationDialog from "@/components/organizations/create-organization-dialog";
-import OrganizationGridItemSkeleton from "@/components/organizations/organization-grid-item-skeleton";
 import OrganizationListItemSkeleton from "@/components/organizations/organization-list-item-skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useUserPreferences } from "@/stores/user-preferences";
 import { LayoutGrid, List } from "lucide-react";
 
-const NRO_ITEMS = 6;
+const NRO_ITEMS = 3;
 
 export default function OrganizationsLoadingScreen() {
-    const viewMode = useUserPreferences((state) => state.organizationsViewMode);
-
     const loadingItems = Array.from({ length: NRO_ITEMS });
 
     return (
@@ -37,20 +32,11 @@ export default function OrganizationsLoadingScreen() {
                     <CreateOrganizationDialog disabled />
                 </div>
             </div>
-
-            {viewMode === "list" ? (
-                <div className="flex flex-col gap-3">
-                    {loadingItems.map(() => (
-                        <OrganizationListItemSkeleton />
-                    ))}
-                </div>
-            ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {loadingItems.map(() => (
-                        <OrganizationGridItemSkeleton />
-                    ))}
-                </div>
-            )}
+            <div className="flex flex-col gap-3">
+                {loadingItems.map((_, index) => (
+                    <OrganizationListItemSkeleton key={index} />
+                ))}
+            </div>
         </div>
     );
 }
