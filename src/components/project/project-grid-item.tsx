@@ -1,10 +1,10 @@
 import { GetProjectDetailsResponse } from "@/services/c4models/types";
 import { ProjectResponse } from "@/services/projects/types";
-import { Card, CardContent } from "./ui/card";
 import { Calendar, FolderKanban } from "lucide-react";
-import { VisibilityBadge } from "./project-list";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { Card, CardContent } from "../ui/card";
+import { VisibilityBadge } from "../project-list";
 
 export default function ProjectGridItem({
     project,

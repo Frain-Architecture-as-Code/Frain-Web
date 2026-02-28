@@ -1,9 +1,9 @@
 import { GetProjectDetailsResponse } from "@/services/c4models/types";
 import { ProjectResponse } from "@/services/projects/types";
-import { Card, CardContent } from "./ui/card";
+import { Card, CardContent } from "../ui/card";
 import { Calendar, FolderKanban } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { VisibilityBadge } from "./project-list";
+import { VisibilityBadge } from "../project-list";
 import Link from "next/link";
 
 export default function ProjectListItem({

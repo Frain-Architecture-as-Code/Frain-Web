@@ -11,8 +11,8 @@ import type { GetProjectDetailsResponse } from "@/services/c4models/types";
 import { ProjectResponse, ProjectVisibility } from "@/services/projects/types";
 import { useUserPreferences, type ViewMode } from "@/stores/user-preferences";
 import CreateProjectDialog from "./create-project-dialog";
-import ProjectGridItem from "./project-grid-item";
-import ProjectListItem from "./project-list-item";
+import ProjectGridItem from "./project/project-grid-item";
+import ProjectListItem from "./project/project-list-item";
 
 export function VisibilityBadge({
     visibility,
