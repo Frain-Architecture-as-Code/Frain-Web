@@ -43,9 +43,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const PERSIST_DEBOUNCE_MS = 600;
 
-const edgeTypes = {
-    floating: FloatingEdge,
-};
+const edgeTypes = { floating: FloatingEdge };
 
 interface ProjectCanvasProps {
     projectId: string;
@@ -68,16 +66,6 @@ export function ProjectCanvas({
         [],
     );
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-
-    const views = initialViews;
-
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const pathname = usePathname();
-    const currentViewId = searchParams.get("view");
-    const [activeViewId, setActiveViewId] = useState<string | null>(
-        currentViewId ? currentViewId : (initialViews[0]?.id ?? null),
-    );
     const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>(initialApiKeys);
     const [members, setMembers] = useState<MemberResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -86,33 +74,31 @@ export function ProjectCanvas({
     const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false);
     const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const currentViewId = searchParams.get("view");
+
     const internalNodeIdsRef = useRef<Set<string>>(new Set());
-    const activeViewIdRef = useRef<string | null>(activeViewId);
-
-    const updateParam = (viewId: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-
-        params.set("view", viewId);
-
-        router.push(`${pathname}?${params.toString()}`);
-    };
-
-    useEffect(() => {
-        activeViewIdRef.current = activeViewId;
-    }, [activeViewId]);
+    const activeViewIdRef = useRef<string | null>(
+        currentViewId ?? initialViews[0]?.id ?? null,
+    );
 
     const currentUserRole = useMemo<MemberRole>(() => {
-        const currentMember = members.find((m) => m.userId === currentUserId);
-        return (
-            (currentMember?.memberRole as MemberRole) || MemberRole.CONTRIBUTOR
-        );
+        const member = members.find((m) => m.userId === currentUserId);
+        return (member?.memberRole as MemberRole) ?? MemberRole.CONTRIBUTOR;
     }, [members, currentUserId]);
 
     const canAccessApiKeys = canViewAllKeys(currentUserRole);
 
-    const onViewClick = (viewId: string) => {
-        updateParam(viewId);
-    };
+    const updateParam = useCallback(
+        (viewId: string) => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("view", viewId);
+            router.push(`${pathname}?${params.toString()}`);
+        },
+        [searchParams, pathname, router],
+    );
 
     const loadView = useCallback(
         async (viewId: string) => {
@@ -130,10 +116,9 @@ export function ProjectCanvas({
                 internalNodeIdsRef.current = new Set(
                     viewDetail.nodes.map((n) => n.id),
                 );
-
+                activeViewIdRef.current = viewId;
                 setNodes(result.nodes);
                 setEdges(result.edges);
-                setActiveViewId(viewId);
             } catch (error) {
                 toast.error(
                     error instanceof Error
@@ -147,6 +132,7 @@ export function ProjectCanvas({
         [projectId, setNodes, setEdges],
     );
 
+    // Load initial view
     useEffect(() => {
         const viewToLoad = currentViewId ?? initialViews[0]?.id;
 
@@ -166,9 +152,9 @@ export function ProjectCanvas({
                     internalNodeIdsRef.current = new Set(
                         firstEmbeddedView.nodes.map((n) => n.id),
                     );
+                    activeViewIdRef.current = firstEmbeddedView.id;
                     setNodes(result.nodes);
                     setEdges(result.edges);
-                    setActiveViewId(firstEmbeddedView.id);
                 })
                 .finally(() => setIsLoading(false));
             return;
@@ -177,6 +163,7 @@ export function ProjectCanvas({
         setIsLoading(false);
     }, [initialViews, c4Model, setNodes, setEdges, loadView]);
 
+    // Load members
     useEffect(() => {
         MemberController.getAll(organizationId)
             .then(setMembers)
@@ -193,7 +180,6 @@ export function ProjectCanvas({
         (nodeId: string, x: number, y: number) => {
             const viewId = activeViewIdRef.current;
             if (!viewId) return;
-
             C4ModelController.updateNodePosition(projectId, viewId, nodeId, {
                 x,
                 y,
@@ -227,14 +213,13 @@ export function ProjectCanvas({
                 const updatedWrapper = buildGroupWrapperNode(internalNodes);
                 if (!updatedWrapper || !currentWrapper) return currentNodes;
 
-                if (
+                const unchanged =
                     currentWrapper.position.x === updatedWrapper.position.x &&
                     currentWrapper.position.y === updatedWrapper.position.y &&
                     currentWrapper.width === updatedWrapper.width &&
-                    currentWrapper.height === updatedWrapper.height
-                ) {
-                    return currentNodes;
-                }
+                    currentWrapper.height === updatedWrapper.height;
+
+                if (unchanged) return currentNodes;
 
                 return currentNodes.map((n) =>
                     n.id === GROUP_WRAPPER_ID ? updatedWrapper : n,
@@ -244,11 +229,9 @@ export function ProjectCanvas({
         [setNodes],
     );
 
-    // Solo se encarga de persistir al soltar el ratón
     const handleNodeDragStop = useCallback(
         (_event: React.MouseEvent, node: Node<C4NodeData>) => {
             if (!activeViewIdRef.current) return;
-
             persistNodePosition(
                 node.id,
                 Math.round(node.position.x),
@@ -258,10 +241,13 @@ export function ProjectCanvas({
         [persistNodePosition],
     );
 
-    function handleOpenApiKeysModal(): void {
-        setIsApiKeysModalOpen(true);
-        refreshApiKeys();
-    }
+    const handleViewClick = useCallback(
+        (viewId: string) => {
+            updateParam(viewId);
+            loadView(viewId);
+        },
+        [updateParam, loadView],
+    );
 
     async function refreshApiKeys(): Promise<void> {
         setIsApiKeysLoading(true);
@@ -282,8 +268,9 @@ export function ProjectCanvas({
         }
     }
 
-    function handleOpenCreateModal(): void {
-        setIsCreateModalOpen(true);
+    function handleOpenApiKeysModal(): void {
+        setIsApiKeysModalOpen(true);
+        refreshApiKeys();
     }
 
     async function handleCreateApiKey(memberId: string): Promise<void> {
@@ -292,24 +279,26 @@ export function ProjectCanvas({
             const result = await ProjectApiKeyController.create(
                 organizationId,
                 projectId,
-                { targetMemberId: memberId },
+                {
+                    targetMemberId: memberId,
+                },
             );
             toast.success("API key created", {
                 description: `Key: ${result.apiKeySecret}`,
                 duration: 10000,
             });
-
-            const newKeyWithFull: ApiKeyWithFull = {
-                id: result.id,
-                projectId: result.projectId,
-                memberId: result.memberId,
-                apiKeySecret: result.apiKeySecret.slice(0, 8),
-                lastUsedAt: result.lastUsedAt ?? "",
-                createdAt: result.createdAt,
-                fullKey: result.apiKeySecret,
-            };
-
-            setApiKeys((prev) => [newKeyWithFull, ...prev]);
+            setApiKeys((prev) => [
+                {
+                    id: result.id,
+                    projectId: result.projectId,
+                    memberId: result.memberId,
+                    apiKeySecret: result.apiKeySecret.slice(0, 8),
+                    lastUsedAt: result.lastUsedAt ?? "",
+                    createdAt: result.createdAt,
+                    fullKey: result.apiKeySecret,
+                },
+                ...prev,
+            ]);
             setIsCreateModalOpen(false);
         } catch (error) {
             toast.error(
@@ -340,10 +329,10 @@ export function ProjectCanvas({
         <div className="relative h-full w-full">
             <ProjectSidebar
                 projectId={projectId}
-                modelTitle={c4Model?.c4Model?.title || "Untitled"}
-                views={views}
-                activeViewId={activeViewId}
-                onViewSelect={onViewClick}
+                modelTitle={c4Model?.c4Model?.title ?? "Untitled"}
+                views={initialViews}
+                activeViewId={currentViewId ?? initialViews[0]?.id ?? null}
+                onViewSelect={handleViewClick}
                 canAccessApiKeys={canAccessApiKeys}
                 onOpenApiKeysModal={handleOpenApiKeysModal}
             />
@@ -355,7 +344,7 @@ export function ProjectCanvas({
                 members={members}
                 currentUserId={currentUserId}
                 currentUserRole={currentUserRole}
-                onCreateApiKey={handleOpenCreateModal}
+                onCreateApiKey={() => setIsCreateModalOpen(true)}
                 onRevokeApiKey={handleRevokeApiKey}
                 isLoading={isApiKeysLoading}
             />
@@ -411,7 +400,7 @@ export function ProjectCanvas({
                         <p className="text-lg font-medium">
                             No views available
                         </p>
-                        <p className="text-sm mt-1">
+                        <p className="mt-1 text-sm">
                             {c4Model === null
                                 ? "C4 model not found"
                                 : "Create a view to visualize your architecture"}
