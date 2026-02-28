@@ -11,7 +11,6 @@ let elkInstance: InstanceType<typeof ELK> | null = null;
 
 function getElk(): InstanceType<typeof ELK> {
     if (!elkInstance) {
-        // Use Web Worker in the browser
         if (typeof window !== "undefined" && typeof Worker !== "undefined") {
             elkInstance = new ELK({
                 workerFactory: () =>
@@ -20,7 +19,6 @@ function getElk(): InstanceType<typeof ELK> {
                     ),
             });
         } else {
-            // Fallback for SSR
             elkInstance = new ELK();
         }
     }
@@ -73,6 +71,13 @@ const DEFAULT_LABEL_BG_STYLE = {
     fillOpacity: 1,
 };
 
+// Layout spacing constants
+const NODE_V_GAP = 80;
+const WRAPPER_PADDING = 40;
+const EXTERNAL_H_GAP = 120;
+const EXTERNAL_V_GAP = 60;
+const PERSON_TO_CONTAINER_GAP = 60;
+
 // --------------------------------------------------------------------------------
 
 export interface C4NodeData {
@@ -89,21 +94,15 @@ export interface LayoutResult {
     edges: Edge[];
 }
 
-const WRAPPER_PADDING = 40;
 export const GROUP_WRAPPER_ID = "__group-wrapper__";
 
 function hasPositions(nodes: FrainNodeJSON[]): boolean {
     if (nodes.length === 0) return false;
-
     const allValidNumbers = nodes.every(
         (n) => typeof n.x === "number" && typeof n.y === "number",
     );
     if (!allValidNumbers) return false;
-
-    const allAtOrigin = nodes.every((n) => n.x === 0 && n.y === 0);
-    if (allAtOrigin) return false;
-
-    return true;
+    return !nodes.every((n) => n.x === 0 && n.y === 0);
 }
 
 function toReactFlowNode(
@@ -184,29 +183,188 @@ export function buildGroupWrapperNode(internalNodes: Node[]): Node | null {
     };
 }
 
+/**
+ * TWO-PHASE GROUPED LAYOUT
+ *
+ * Phase 1 — Vertical inner group (internal nodes only):
+ *   - PERSON nodes: centered horizontally at the top
+ *   - Container/System/DB/etc nodes: laid out via ELK (direction=DOWN) below persons
+ *   All nodes share a single vertical axis — no horizontal spreading of persons.
+ *
+ * Phase 2 — Horizontal outer placement:
+ *   - Inner group on the left
+ *   - EXTERNAL_SYSTEM nodes stacked vertically to the right, centered on inner group height
+ */
+async function computeGroupedLayout(
+    nodes: FrainNodeJSON[],
+    externalNodes: FrainNodeJSON[],
+    relations: FrainRelationJSON[],
+): Promise<Map<string, { x: number; y: number }>> {
+    const positions = new Map<string, { x: number; y: number }>();
+
+    const personNodes = nodes.filter((n) => n.type === "PERSON");
+    const containerNodes = nodes.filter((n) => n.type !== "PERSON");
+    const internalIds = new Set(nodes.map((n) => n.id));
+
+    // Relations only between container-layer nodes (for ELK ordering)
+    const containerIds = new Set(containerNodes.map((n) => n.id));
+    const containerRelations = relations.filter(
+        (r) => containerIds.has(r.sourceId) && containerIds.has(r.targetId),
+    );
+
+    // ── Step 1: layout container nodes with ELK (vertical) ───────────────────
+    let containerOffsetY = 0;
+    let innerGroupW = 0;
+
+    if (containerNodes.length > 0) {
+        const elkGraph = {
+            id: "root",
+            layoutOptions: {
+                "elk.algorithm": "layered",
+                "elk.direction": "DOWN",
+                "elk.spacing.nodeNode": "60",
+                "elk.layered.spacing.nodeNodeBetweenLayers": String(NODE_V_GAP),
+                "elk.padding": "[top=0,left=0,bottom=0,right=0]",
+                "elk.edgeRouting": "ORTHOGONAL",
+                "elk.separateConnectedComponents": "false",
+                "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+            },
+            children: containerNodes.map((n) => ({
+                id: n.id,
+                width: NODE_WIDTH[n.type],
+                height: NODE_HEIGHT[n.type],
+            })),
+            edges: containerRelations.map((r, i) => ({
+                id: `elk-c-${i}`,
+                sources: [r.sourceId],
+                targets: [r.targetId],
+            })),
+        };
+
+        const elk = getElk();
+        const layouted = await elk.layout(elkGraph);
+
+        // Compute bounding box of container layout to know innerGroupW
+        let cMinX = Number.POSITIVE_INFINITY;
+        let cMaxX = Number.NEGATIVE_INFINITY;
+
+        for (const child of layouted.children ?? []) {
+            const x = child.x ?? 0;
+            const w = child.width ?? 0;
+            if (x < cMinX) cMinX = x;
+            if (x + w > cMaxX) cMaxX = x + w;
+            positions.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 });
+        }
+
+        innerGroupW = cMaxX - cMinX;
+        containerOffsetY = 0; // will be shifted after persons are placed
+    }
+
+    // ── Step 2: place person nodes centered above containers ──────────────────
+    if (personNodes.length > 0) {
+        // Total width of persons row
+        const personRowW =
+            personNodes.reduce((acc, n) => acc + NODE_WIDTH[n.type], 0) +
+            Math.max(0, personNodes.length - 1) * 60;
+
+        // Use the wider of person row or container group to center both
+        innerGroupW = Math.max(innerGroupW, personRowW);
+
+        // Center persons horizontally
+        let px = (innerGroupW - personRowW) / 2;
+        const personRowH = Math.max(
+            ...personNodes.map((n) => NODE_HEIGHT[n.type]),
+        );
+
+        for (const n of personNodes) {
+            positions.set(n.id, { x: px, y: 0 });
+            px += NODE_WIDTH[n.type] + 60;
+        }
+
+        // Shift all container nodes down below person row
+        containerOffsetY = personRowH + PERSON_TO_CONTAINER_GAP;
+        for (const n of containerNodes) {
+            const pos = positions.get(n.id);
+            if (pos) {
+                positions.set(n.id, {
+                    x: pos.x,
+                    y: pos.y + containerOffsetY,
+                });
+            }
+        }
+    }
+
+    // Fallback for any internal node not placed
+    for (const n of nodes) {
+        if (!positions.has(n.id)) {
+            positions.set(n.id, { x: 0, y: 0 });
+        }
+    }
+
+    // ── Phase 2: place external systems to the right ──────────────────────────
+    // Compute bounding box of inner group
+    let innerMinX = Number.POSITIVE_INFINITY;
+    let innerMinY = Number.POSITIVE_INFINITY;
+    let innerMaxX = Number.NEGATIVE_INFINITY;
+    let innerMaxY = Number.NEGATIVE_INFINITY;
+
+    for (const n of nodes) {
+        const pos = positions.get(n.id)!;
+        const w = NODE_WIDTH[n.type];
+        const h = NODE_HEIGHT[n.type];
+        if (pos.x < innerMinX) innerMinX = pos.x;
+        if (pos.y < innerMinY) innerMinY = pos.y;
+        if (pos.x + w > innerMaxX) innerMaxX = pos.x + w;
+        if (pos.y + h > innerMaxY) innerMaxY = pos.y + h;
+    }
+
+    if (nodes.length === 0) {
+        innerMinX = 0;
+        innerMinY = 0;
+        innerMaxX = 0;
+        innerMaxY = 0;
+    }
+
+    const innerGroupHeight = innerMaxY - innerMinY;
+
+    // Total height of stacked external nodes
+    const extTotalH =
+        externalNodes.reduce((acc, n) => acc + NODE_HEIGHT[n.type], 0) +
+        Math.max(0, externalNodes.length - 1) * EXTERNAL_V_GAP;
+
+    // X: to the right of the inner group (accounting for wrapper padding)
+    const externalX = innerMaxX + WRAPPER_PADDING + EXTERNAL_H_GAP;
+
+    // Y: vertically centered relative to inner group
+    const extStartY = innerMinY + (innerGroupHeight - extTotalH) / 2;
+
+    let cursorY = extStartY;
+    for (const n of externalNodes) {
+        positions.set(n.id, { x: externalX, y: cursorY });
+        cursorY += NODE_HEIGHT[n.type] + EXTERNAL_V_GAP;
+    }
+
+    return positions;
+}
+
 export async function layoutNodes(
     nodes: FrainNodeJSON[],
     externalNodes: FrainNodeJSON[],
     relations: FrainRelationJSON[],
-    forceRelayout: boolean = false, // Nuevo parámetro para forzar el re-ordenamiento
+    forceRelayout: boolean = false,
 ): Promise<LayoutResult> {
     const allNodes = [...nodes, ...externalNodes];
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
-
-    // Use Set for O(1) lookups.
     const internalNodeIds = new Set(nodes.map((n) => n.id));
 
-    // Si no forzamos el relayout y ya existen posiciones válidas, mantenemos las actuales
+    // If not forcing relayout and valid positions exist, keep current positions
     if (!forceRelayout && hasPositions(allNodes)) {
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
-
-        // Fast filtering using Set.
         const internalRfNodes = rfNodes.filter((n) =>
             internalNodeIds.has(n.id),
         );
-
         const wrapper = buildGroupWrapperNode(internalRfNodes);
         return {
             nodes: (wrapper
@@ -216,63 +374,24 @@ export async function layoutNodes(
         };
     }
 
-    const externalNodeIds = new Set(externalNodes.map((n) => n.id));
-
-    // ELK layout configuration optimized for C4 diagrams.
-    const elkGraph = {
-        id: "root",
-        layoutOptions: {
-            "elk.algorithm": "layered",
-            "elk.direction": "DOWN",
-            "elk.spacing.nodeNode": "80",
-            "elk.layered.spacing.nodeNodeBetweenLayers": "300",
-            "elk.padding": "[top=50,left=50,bottom=50,right=50]",
-            "elk.edgeRouting": "POLYLINE",
-            "elk.separateConnectedComponents": "true",
-            "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
-        },
-        children: allNodes.map((n) => ({
-            id: n.id,
-            width: NODE_WIDTH[n.type],
-            height: NODE_HEIGHT[n.type],
-        })),
-        edges: relations.map((r, i) => ({
-            id: `elk-e-${i}`,
-            sources: [r.sourceId],
-            targets: [r.targetId],
-        })),
-    };
-
-    const elk = getElk();
-    const layoutedGraph = await elk.layout(elkGraph);
-
-    // Convert ELK result to Map for O(1) access.
-    const elkPositionsMap = new Map<string, { x: number; y: number }>();
-    if (layoutedGraph.children) {
-        for (const child of layoutedGraph.children) {
-            elkPositionsMap.set(child.id, {
-                x: child.x ?? 0,
-                y: child.y ?? 0,
-            });
-        }
-    }
+    const positions = await computeGroupedLayout(
+        nodes,
+        externalNodes,
+        relations,
+    );
 
     const rfNodes = allNodes.map((n) => {
-        const position = elkPositionsMap.get(n.id) ?? { x: 0, y: 0 };
+        const position = positions.get(n.id) ?? { x: 0, y: 0 };
         return toReactFlowNode(n, position);
     });
 
-    // Reuse Set for filtering internal nodes.
     const internalRfNodes = rfNodes.filter((n) => internalNodeIds.has(n.id));
-
     const wrapper = buildGroupWrapperNode(internalRfNodes);
 
-    const finalNodes = (
-        wrapper ? [wrapper, ...rfNodes] : rfNodes
-    ) as Node<C4NodeData>[];
-
     return {
-        nodes: finalNodes,
+        nodes: (wrapper
+            ? [wrapper, ...rfNodes]
+            : rfNodes) as Node<C4NodeData>[],
         edges,
     };
 }
