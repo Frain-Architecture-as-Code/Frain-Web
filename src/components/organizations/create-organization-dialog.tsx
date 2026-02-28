@@ -25,7 +25,11 @@ import {
     SelectValue,
 } from "../ui/select";
 
-export default function CreateOrganizationDialog() {
+export default function CreateOrganizationDialog({
+    disabled = false,
+}: {
+    disabled?: boolean;
+}) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
@@ -65,7 +69,7 @@ export default function CreateOrganizationDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" disabled={disabled}>
                     <Plus className="mr-1 h-4 w-4" />
                     New Organization
                 </Button>
