@@ -31,10 +31,11 @@ import { FloatingEdge } from "@/components/project/floating-edge";
 import { ProjectSidebar } from "@/components/project/project-sidebar";
 import { canViewAllKeys } from "@/lib/permissions";
 import { C4ModelController } from "@/services/c4models/controller";
-import type {
-    C4ModelResponse,
-    ViewDetailResponse,
-    ViewSummaryResponse,
+import {
+    ViewType,
+    type C4ModelResponse,
+    type ViewDetailResponse,
+    type ViewSummaryResponse,
 } from "@/services/c4models/types";
 import { MemberController } from "@/services/members/controller";
 import { type MemberResponse, MemberRole } from "@/services/members/types";
@@ -58,7 +59,6 @@ function FlowActions({ onRelayout }: { onRelayout: () => Promise<void> }) {
 
     const onLayoutClick = async () => {
         await onRelayout();
-        // Esperamos que React dibuje el nuevo DOM antes de centrar la cámara
         requestAnimationFrame(() => {
             fitView(FIT_VIEW_OPTIONS);
         });
@@ -125,7 +125,6 @@ export function ProjectCanvas({
         currentViewId ?? initialViews[0]?.id ?? null,
     );
 
-    // Cache current view detail for local relayout
     const currentViewDetailRef = useRef<ViewDetailResponse | null>(null);
 
     const currentUserRole = useMemo<MemberRole>(() => {
@@ -153,13 +152,14 @@ export function ProjectCanvas({
                     viewId,
                 );
 
-                // Store for future relayouts
                 currentViewDetailRef.current = viewDetail;
 
                 const result = await layoutNodes(
                     viewDetail.nodes,
                     viewDetail.externalNodes,
                     viewDetail.relations,
+                    false,
+                    viewDetail.type,
                 );
 
                 internalNodeIdsRef.current = new Set(
@@ -182,7 +182,6 @@ export function ProjectCanvas({
         [projectId, setNodes, setEdges],
     );
 
-    // Re-run ELK layout forzando la organización y guardando las nuevas posiciones
     const handleRelayout = useCallback(async () => {
         if (!currentViewDetailRef.current) return;
         const viewId = activeViewIdRef.current;
@@ -193,22 +192,22 @@ export function ProjectCanvas({
                 nodes: rawNodes,
                 externalNodes,
                 relations,
+                type: viewType,
             } = currentViewDetailRef.current;
 
             const result = await layoutNodes(
                 rawNodes,
                 externalNodes,
                 relations,
-                true, // Forzamos a ELK a calcular posiciones
+                true,
+                viewType,
             );
 
             setNodes(result.nodes);
             setEdges(result.edges);
 
-            // Guardar posiciones de todos los nodos en el backend de forma concurrente
             if (viewId) {
                 const updatePromises = result.nodes
-                    // Actualizamos solo los nodos internos (no el wrapper)
                     .filter(
                         (n) =>
                             n.id !== GROUP_WRAPPER_ID &&
@@ -257,6 +256,8 @@ export function ProjectCanvas({
                 firstEmbeddedView.nodes,
                 firstEmbeddedView.externalNodes,
                 firstEmbeddedView.relations,
+                firstEmbeddedView.type !== ViewType.CONTEXT,
+                firstEmbeddedView.type,
             )
                 .then((result) => {
                     internalNodeIdsRef.current = new Set(
@@ -286,7 +287,6 @@ export function ProjectCanvas({
             });
     }, [organizationId]);
 
-    // Persist node position (debounced)
     const persistNodePosition = useDebouncedCallback(
         (nodeId: string, x: number, y: number) => {
             const viewId = activeViewIdRef.current;
@@ -306,7 +306,6 @@ export function ProjectCanvas({
         PERSIST_DEBOUNCE_MS,
     );
 
-    // Update wrapper while dragging internal nodes
     const handleNodeDrag = useCallback(
         (_event: React.MouseEvent, draggedNode: Node<C4NodeData>) => {
             setNodes((currentNodes) => {
@@ -344,7 +343,6 @@ export function ProjectCanvas({
         [setNodes],
     );
 
-    // Persist final position on drag stop
     const handleNodeDragStop = useCallback(
         (_event: React.MouseEvent, node: Node<C4NodeData>) => {
             if (!activeViewIdRef.current) return;
@@ -366,7 +364,6 @@ export function ProjectCanvas({
         [updateParam, loadView],
     );
 
-    // Refresh API keys list
     const refreshApiKeys = useCallback(async (): Promise<void> => {
         setIsApiKeysLoading(true);
         try {
@@ -391,7 +388,6 @@ export function ProjectCanvas({
         refreshApiKeys();
     }, [refreshApiKeys]);
 
-    // Create new API key
     const handleCreateApiKey = useCallback(
         async (memberId: string): Promise<void> => {
             setIsCreatingApiKey(true);
@@ -434,7 +430,6 @@ export function ProjectCanvas({
         [organizationId, projectId],
     );
 
-    // Revoke API key
     const handleRevokeApiKey = useCallback(
         async (apiKeyId: string): Promise<void> => {
             setApiKeys((prev) => prev.filter((k) => k.id !== apiKeyId));

@@ -5,6 +5,7 @@ import type {
     FrainRelationJSON,
     NodeType,
 } from "@/services/c4models/types";
+import { ViewType } from "@/services/c4models/types";
 
 // Lazy singleton ELK instance (SSR-safe).
 let elkInstance: InstanceType<typeof ELK> | null = null;
@@ -351,7 +352,9 @@ export async function layoutNodes(
     externalNodes: FrainNodeJSON[],
     relations: FrainRelationJSON[],
     forceRelayout: boolean = false,
+    viewType?: ViewType,
 ): Promise<LayoutResult> {
+    const addWrapper = viewType !== ViewType.CONTEXT;
     const allNodes = [...nodes, ...externalNodes];
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
     const internalNodeIds = new Set(nodes.map((n) => n.id));
@@ -367,7 +370,9 @@ export async function layoutNodes(
                 internalNodeIds.has(n.id) &&
                 (n.data as C4NodeData).nodeType !== "PERSON",
         );
-        const wrapper = buildGroupWrapperNode(wrapperRfNodes);
+        const wrapper = addWrapper
+            ? buildGroupWrapperNode(wrapperRfNodes)
+            : null;
         return {
             nodes: (wrapper
                 ? [wrapper, ...rfNodes]
@@ -393,7 +398,7 @@ export async function layoutNodes(
             internalNodeIds.has(n.id) &&
             (n.data as C4NodeData).nodeType !== "PERSON",
     );
-    const wrapper = buildGroupWrapperNode(wrapperRfNodes);
+    const wrapper = addWrapper ? buildGroupWrapperNode(wrapperRfNodes) : null;
 
     return {
         nodes: (wrapper
