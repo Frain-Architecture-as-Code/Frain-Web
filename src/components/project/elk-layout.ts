@@ -76,7 +76,7 @@ const NODE_V_GAP = 80;
 const WRAPPER_PADDING = 40;
 const EXTERNAL_H_GAP = 120;
 const EXTERNAL_V_GAP = 60;
-const PERSON_TO_CONTAINER_GAP = 60;
+const PERSON_TO_WRAPPER_GAP = 40; // gap between bottom of person row and top of wrapper
 
 // --------------------------------------------------------------------------------
 
@@ -142,15 +142,22 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
     };
 }
 
-export function buildGroupWrapperNode(internalNodes: Node[]): Node | null {
-    if (internalNodes.length === 0) return null;
+/**
+ * Builds the group wrapper node that visually wraps the container/system nodes.
+ * NOTE: PERSON nodes are intentionally excluded — they float above the wrapper.
+ */
+export function buildGroupWrapperNode(
+    /** Only non-PERSON internal nodes */
+    wrapperNodes: Node[],
+): Node | null {
+    if (wrapperNodes.length === 0) return null;
 
     let minX = Number.POSITIVE_INFINITY;
     let minY = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
     let maxY = Number.NEGATIVE_INFINITY;
 
-    for (const n of internalNodes) {
+    for (const n of wrapperNodes) {
         const x = n.position.x;
         const y = n.position.y;
         const w = (n.width as number) ?? 200;
@@ -184,16 +191,26 @@ export function buildGroupWrapperNode(internalNodes: Node[]): Node | null {
 }
 
 /**
- * TWO-PHASE GROUPED LAYOUT
+ * LAYOUT ALGORITHM
  *
- * Phase 1 — Vertical inner group (internal nodes only):
- *   - PERSON nodes: centered horizontally at the top
- *   - Container/System/DB/etc nodes: laid out via ELK (direction=DOWN) below persons
- *   All nodes share a single vertical axis — no horizontal spreading of persons.
+ * Step 1 — ELK lays out container/system/db nodes vertically (direction=DOWN).
+ *          These nodes will be enclosed by the wrapper.
  *
- * Phase 2 — Horizontal outer placement:
- *   - Inner group on the left
- *   - EXTERNAL_SYSTEM nodes stacked vertically to the right, centered on inner group height
+ * Step 2 — PERSON nodes are placed ABOVE the wrapper, centered horizontally
+ *          over it. They are NOT inside the wrapper.
+ *
+ * Step 3 — EXTERNAL_SYSTEM nodes are placed to the RIGHT of the wrapper,
+ *          stacked vertically and centered on the wrapper's height.
+ *          They are also NOT inside the wrapper.
+ *
+ * Visual result:
+ *
+ *        [Person]  [Person]          ← above wrapper, centered
+ *   ┌─────────────────────────┐
+ *   │  [WebApp]               │      [ExtSys]   ← right of wrapper, centered
+ *   │  [API]                  │
+ *   │  [Database]             │
+ *   └─────────────────────────┘
  */
 async function computeGroupedLayout(
     nodes: FrainNodeJSON[],
@@ -204,17 +221,18 @@ async function computeGroupedLayout(
 
     const personNodes = nodes.filter((n) => n.type === "PERSON");
     const containerNodes = nodes.filter((n) => n.type !== "PERSON");
-    const internalIds = new Set(nodes.map((n) => n.id));
 
-    // Relations only between container-layer nodes (for ELK ordering)
     const containerIds = new Set(containerNodes.map((n) => n.id));
     const containerRelations = relations.filter(
         (r) => containerIds.has(r.sourceId) && containerIds.has(r.targetId),
     );
 
-    // ── Step 1: layout container nodes with ELK (vertical) ───────────────────
-    let containerOffsetY = 0;
-    let innerGroupW = 0;
+    // ── Step 1: ELK vertical layout for container/system/db nodes ─────────────
+    // These are the nodes that will go INSIDE the wrapper.
+    let wrapperContentMinX = 0;
+    let wrapperContentMaxX = 0;
+    let wrapperContentMinY = 0;
+    let wrapperContentMaxY = 0;
 
     if (containerNodes.length > 0) {
         const elkGraph = {
@@ -244,104 +262,85 @@ async function computeGroupedLayout(
         const elk = getElk();
         const layouted = await elk.layout(elkGraph);
 
-        // Compute bounding box of container layout to know innerGroupW
-        let cMinX = Number.POSITIVE_INFINITY;
-        let cMaxX = Number.NEGATIVE_INFINITY;
+        wrapperContentMinX = Number.POSITIVE_INFINITY;
+        wrapperContentMaxX = Number.NEGATIVE_INFINITY;
+        wrapperContentMinY = Number.POSITIVE_INFINITY;
+        wrapperContentMaxY = Number.NEGATIVE_INFINITY;
 
         for (const child of layouted.children ?? []) {
             const x = child.x ?? 0;
+            const y = child.y ?? 0;
             const w = child.width ?? 0;
-            if (x < cMinX) cMinX = x;
-            if (x + w > cMaxX) cMaxX = x + w;
-            positions.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 });
-        }
+            const h = child.height ?? 0;
 
-        innerGroupW = cMaxX - cMinX;
-        containerOffsetY = 0; // will be shifted after persons are placed
+            if (x < wrapperContentMinX) wrapperContentMinX = x;
+            if (x + w > wrapperContentMaxX) wrapperContentMaxX = x + w;
+            if (y < wrapperContentMinY) wrapperContentMinY = y;
+            if (y + h > wrapperContentMaxY) wrapperContentMaxY = y + h;
+
+            positions.set(child.id, { x, y });
+        }
+    } else {
+        wrapperContentMinX = 0;
+        wrapperContentMaxX = 0;
+        wrapperContentMinY = 0;
+        wrapperContentMaxY = 0;
     }
 
-    // ── Step 2: place person nodes centered above containers ──────────────────
+    // Wrapper bounding box (includes WRAPPER_PADDING on all sides)
+    const wrapperLeft = wrapperContentMinX - WRAPPER_PADDING;
+    const wrapperRight = wrapperContentMaxX + WRAPPER_PADDING;
+    const wrapperTop = wrapperContentMinY - WRAPPER_PADDING;
+    const wrapperWidth = wrapperRight - wrapperLeft;
+    const wrapperHeight =
+        wrapperContentMaxY - wrapperContentMinY + WRAPPER_PADDING * 2;
+
+    // ── Step 2: place PERSON nodes ABOVE the wrapper, centered ────────────────
     if (personNodes.length > 0) {
-        // Total width of persons row
         const personRowW =
             personNodes.reduce((acc, n) => acc + NODE_WIDTH[n.type], 0) +
             Math.max(0, personNodes.length - 1) * 60;
 
-        // Use the wider of person row or container group to center both
-        innerGroupW = Math.max(innerGroupW, personRowW);
-
-        // Center persons horizontally
-        let px = (innerGroupW - personRowW) / 2;
         const personRowH = Math.max(
             ...personNodes.map((n) => NODE_HEIGHT[n.type]),
         );
 
-        for (const n of personNodes) {
-            positions.set(n.id, { x: px, y: 0 });
-            px += NODE_WIDTH[n.type] + 60;
-        }
+        // Center persons over the wrapper horizontally
+        let px = wrapperLeft + (wrapperWidth - personRowW) / 2;
 
-        // Shift all container nodes down below person row
-        containerOffsetY = personRowH + PERSON_TO_CONTAINER_GAP;
-        for (const n of containerNodes) {
-            const pos = positions.get(n.id);
-            if (pos) {
-                positions.set(n.id, {
-                    x: pos.x,
-                    y: pos.y + containerOffsetY,
-                });
-            }
+        // Place persons above the wrapper top edge
+        const personY = wrapperTop - PERSON_TO_WRAPPER_GAP - personRowH;
+
+        for (const n of personNodes) {
+            positions.set(n.id, { x: px, y: personY });
+            px += NODE_WIDTH[n.type] + 60;
         }
     }
 
-    // Fallback for any internal node not placed
+    // ── Step 3: place EXTERNAL_SYSTEM nodes to the RIGHT of the wrapper ───────
+    if (externalNodes.length > 0) {
+        const extTotalH =
+            externalNodes.reduce((acc, n) => acc + NODE_HEIGHT[n.type], 0) +
+            Math.max(0, externalNodes.length - 1) * EXTERNAL_V_GAP;
+
+        // X: right of wrapper + gap
+        const externalX = wrapperRight + EXTERNAL_H_GAP;
+
+        // Y: vertically centered relative to wrapper height
+        const extStartY = wrapperTop + (wrapperHeight - extTotalH) / 2;
+
+        let cursorY = extStartY;
+        for (const n of externalNodes) {
+            positions.set(n.id, { x: externalX, y: cursorY });
+            cursorY += NODE_HEIGHT[n.type] + EXTERNAL_V_GAP;
+        }
+    }
+
+    // Fallback: any node not yet placed
     for (const n of nodes) {
         if (!positions.has(n.id)) {
             positions.set(n.id, { x: 0, y: 0 });
         }
-    }
-
-    // ── Phase 2: place external systems to the right ──────────────────────────
-    // Compute bounding box of inner group
-    let innerMinX = Number.POSITIVE_INFINITY;
-    let innerMinY = Number.POSITIVE_INFINITY;
-    let innerMaxX = Number.NEGATIVE_INFINITY;
-    let innerMaxY = Number.NEGATIVE_INFINITY;
-
-    for (const n of nodes) {
-        const pos = positions.get(n.id)!;
-        const w = NODE_WIDTH[n.type];
-        const h = NODE_HEIGHT[n.type];
-        if (pos.x < innerMinX) innerMinX = pos.x;
-        if (pos.y < innerMinY) innerMinY = pos.y;
-        if (pos.x + w > innerMaxX) innerMaxX = pos.x + w;
-        if (pos.y + h > innerMaxY) innerMaxY = pos.y + h;
-    }
-
-    if (nodes.length === 0) {
-        innerMinX = 0;
-        innerMinY = 0;
-        innerMaxX = 0;
-        innerMaxY = 0;
-    }
-
-    const innerGroupHeight = innerMaxY - innerMinY;
-
-    // Total height of stacked external nodes
-    const extTotalH =
-        externalNodes.reduce((acc, n) => acc + NODE_HEIGHT[n.type], 0) +
-        Math.max(0, externalNodes.length - 1) * EXTERNAL_V_GAP;
-
-    // X: to the right of the inner group (accounting for wrapper padding)
-    const externalX = innerMaxX + WRAPPER_PADDING + EXTERNAL_H_GAP;
-
-    // Y: vertically centered relative to inner group
-    const extStartY = innerMinY + (innerGroupHeight - extTotalH) / 2;
-
-    let cursorY = extStartY;
-    for (const n of externalNodes) {
-        positions.set(n.id, { x: externalX, y: cursorY });
-        cursorY += NODE_HEIGHT[n.type] + EXTERNAL_V_GAP;
     }
 
     return positions;
@@ -362,10 +361,13 @@ export async function layoutNodes(
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
-        const internalRfNodes = rfNodes.filter((n) =>
-            internalNodeIds.has(n.id),
+        // For wrapper: only use non-PERSON internal nodes
+        const wrapperRfNodes = rfNodes.filter(
+            (n) =>
+                internalNodeIds.has(n.id) &&
+                (n.data as C4NodeData).nodeType !== "PERSON",
         );
-        const wrapper = buildGroupWrapperNode(internalRfNodes);
+        const wrapper = buildGroupWrapperNode(wrapperRfNodes);
         return {
             nodes: (wrapper
                 ? [wrapper, ...rfNodes]
@@ -385,8 +387,13 @@ export async function layoutNodes(
         return toReactFlowNode(n, position);
     });
 
-    const internalRfNodes = rfNodes.filter((n) => internalNodeIds.has(n.id));
-    const wrapper = buildGroupWrapperNode(internalRfNodes);
+    // Wrapper only wraps non-PERSON internal nodes
+    const wrapperRfNodes = rfNodes.filter(
+        (n) =>
+            internalNodeIds.has(n.id) &&
+            (n.data as C4NodeData).nodeType !== "PERSON",
+    );
+    const wrapper = buildGroupWrapperNode(wrapperRfNodes);
 
     return {
         nodes: (wrapper

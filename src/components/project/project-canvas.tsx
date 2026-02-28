@@ -323,7 +323,9 @@ export function ProjectCanvas({
                     }
                 }
 
-                const updatedWrapper = buildGroupWrapperNode(internalNodes);
+                const updatedWrapper = buildGroupWrapperNode(
+                    internalNodes as Node<C4NodeData>[],
+                );
                 if (!updatedWrapper || !currentWrapper) return currentNodes;
 
                 const unchanged =

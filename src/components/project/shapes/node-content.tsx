@@ -55,9 +55,6 @@ export function NodeContent({
 
     const technologyLabel = data.technology ? `${data.technology}` : "";
 
-    console.log(nodeType);
-    console.log(contextNodeTypes);
-
     const isAContextNode = contextNodeTypes.includes(nodeType);
 
     const labelWithTechnology = `[${getFirstLetterUpperCaseForNodeType(nodeType)}${!isAContextNode ? " : " + technologyLabel : ""}]`;
