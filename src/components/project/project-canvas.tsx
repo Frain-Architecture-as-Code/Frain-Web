@@ -39,6 +39,7 @@ import { MemberController } from "@/services/members/controller";
 import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const PERSIST_DEBOUNCE_MS = 600;
 
@@ -69,10 +70,14 @@ export function ProjectCanvas({
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
     const views = initialViews;
-    const [activeViewId, setActiveViewId] = useState<string | null>(
-        initialViews[0]?.id ?? null,
-    );
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const currentViewId = searchParams.get("view");
+    const [activeViewId, setActiveViewId] = useState<string | null>(
+        currentViewId ? currentViewId : (initialViews[0]?.id ?? null),
+    );
     const [apiKeys, setApiKeys] = useState<ApiKeyWithFull[]>(initialApiKeys);
     const [members, setMembers] = useState<MemberResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -83,6 +88,14 @@ export function ProjectCanvas({
 
     const internalNodeIdsRef = useRef<Set<string>>(new Set());
     const activeViewIdRef = useRef<string | null>(activeViewId);
+
+    const updateParam = (viewId: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        params.set("view", viewId);
+
+        router.push(`${pathname}?${params.toString()}`);
+    };
 
     useEffect(() => {
         activeViewIdRef.current = activeViewId;
@@ -96,6 +109,10 @@ export function ProjectCanvas({
     }, [members, currentUserId]);
 
     const canAccessApiKeys = canViewAllKeys(currentUserRole);
+
+    const onViewClick = (viewId: string) => {
+        updateParam(viewId);
+    };
 
     const loadView = useCallback(
         async (viewId: string) => {
@@ -131,9 +148,10 @@ export function ProjectCanvas({
     );
 
     useEffect(() => {
-        const firstViewId = initialViews[0]?.id;
-        if (firstViewId) {
-            loadView(firstViewId);
+        const viewToLoad = currentViewId ?? initialViews[0]?.id;
+
+        if (viewToLoad) {
+            loadView(viewToLoad);
             return;
         }
 
@@ -325,7 +343,7 @@ export function ProjectCanvas({
                 modelTitle={c4Model?.c4Model?.title || "Untitled"}
                 views={views}
                 activeViewId={activeViewId}
-                onViewSelect={loadView}
+                onViewSelect={onViewClick}
                 canAccessApiKeys={canAccessApiKeys}
                 onOpenApiKeysModal={handleOpenApiKeysModal}
             />
