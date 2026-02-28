@@ -474,6 +474,7 @@ export function ProjectCanvas({
                 onCreateApiKey={() => setIsCreateModalOpen(true)}
                 onRevokeApiKey={handleRevokeApiKey}
                 isLoading={isApiKeysLoading}
+                projectId={projectId}
             />
 
             <CreateApiKeyModal
