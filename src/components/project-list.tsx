@@ -85,43 +85,35 @@ export function ProjectList({
 
     return (
         <div className="space-y-6">
-            <BlurFade delay={0.05}>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            Projects
-                        </h1>
-                        <p className="text-muted-foreground">
-                            Manage projects in {organizationName}.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <ToggleGroup
-                            type="single"
-                            value={viewMode}
-                            onValueChange={(value: string) => {
-                                if (value) setViewMode(value as ViewMode);
-                            }}
-                            variant="outline"
-                            size="sm"
-                        >
-                            <ToggleGroupItem
-                                value="list"
-                                aria-label="List view"
-                            >
-                                <List className="h-4 w-4" />
-                            </ToggleGroupItem>
-                            <ToggleGroupItem
-                                value="grid"
-                                aria-label="Grid view"
-                            >
-                                <LayoutGrid className="h-4 w-4" />
-                            </ToggleGroupItem>
-                        </ToggleGroup>
-                        <CreateProjectDialog organizationId={organizationId} />
-                    </div>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">
+                        Projects
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Manage projects in {organizationName}.
+                    </p>
                 </div>
-            </BlurFade>
+                <div className="flex items-center gap-2">
+                    <ToggleGroup
+                        type="single"
+                        value={viewMode}
+                        onValueChange={(value: string) => {
+                            if (value) setViewMode(value as ViewMode);
+                        }}
+                        variant="outline"
+                        size="sm"
+                    >
+                        <ToggleGroupItem value="list" aria-label="List view">
+                            <List className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="grid" aria-label="Grid view">
+                            <LayoutGrid className="h-4 w-4" />
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                    <CreateProjectDialog organizationId={organizationId} />
+                </div>
+            </div>
 
             {projects.length > 0 ? (
                 viewMode === "list" ? (
