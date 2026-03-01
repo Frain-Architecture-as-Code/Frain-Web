@@ -38,7 +38,7 @@ export function AppSidebar() {
     const pathname = usePathname();
 
     return (
-        <Sidebar variant="inset" collapsible="icon">
+        <Sidebar variant="sidebar" collapsible="icon">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>

@@ -122,31 +122,29 @@ export function ProjectSidebar({
                                 {views.length}
                             </span>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="mt-1 space-y-0.5 pl-4">
+                        <CollapsibleContent className="mt-1 space-y-0.5 pl-4 flex flex-col">
                             {views.length === 0 ? (
                                 <p className="px-2 py-1.5 text-xs text-muted-foreground">
                                     No views available
                                 </p>
                             ) : (
                                 views.map((view) => (
-                                    <button
+                                    <Button
                                         key={view.id}
-                                        type="button"
+                                        variant={
+                                            activeViewId === view.id
+                                                ? "secondary"
+                                                : "ghost"
+                                        }
                                         onClick={() => onViewSelect(view.id)}
-                                        className={cn(
-                                            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
-                                            activeViewId === view.id &&
-                                                "bg-muted font-medium",
-                                        )}
+                                        className="justify-start h-fit"
                                     >
-                                        <Eye className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate">
-                                                {view.name}
-                                            </p>
+                                        <Eye className="size-3.5 text-muted-foreground" />
+                                        <div>
+                                            <p>{view.name}</p>
                                             <ViewTypeLabel type={view.type} />
                                         </div>
-                                    </button>
+                                    </Button>
                                 ))
                             )}
                         </CollapsibleContent>

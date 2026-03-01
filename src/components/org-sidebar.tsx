@@ -43,7 +43,7 @@ export function OrgSidebar() {
     const navigation = getNavigation(organization.organizationId);
 
     return (
-        <Sidebar variant="inset" collapsible="icon">
+        <Sidebar variant="sidebar" collapsible="icon">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>

@@ -2,7 +2,6 @@ import { ProjectCanvas } from "@/components/project/project-canvas";
 import { auth } from "@/lib/auth";
 import { C4ModelController } from "@/services/c4models/controller";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
-import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 
 interface ProjectPageProps {
     params: Promise<{ projectId: string; orgId: string }>;

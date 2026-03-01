@@ -48,6 +48,7 @@ interface ApiKeysSheetProps {
     members: MemberResponse[];
     currentUserId: string;
     currentUserRole: MemberRole;
+    projectId: string;
     onCreateApiKey: () => void;
     onRevokeApiKey: (apiKeyId: string) => Promise<void>;
     isLoading?: boolean;
@@ -60,6 +61,7 @@ export function ApiKeysSheet({
     members,
     currentUserId,
     currentUserRole,
+    projectId,
     onCreateApiKey,
     onRevokeApiKey,
     isLoading = false,
@@ -93,6 +95,11 @@ export function ApiKeysSheet({
     function handleCopyKey(key: ApiKeyWithFull): void {
         navigator.clipboard.writeText(key.apiKeySecret);
         toast.success("API key copied to clipboard");
+    }
+
+    function handleCopyProjectId(): void {
+        navigator.clipboard.writeText(projectId);
+        toast.success("Project ID copied to clipboard");
     }
 
     function formatDate(dateString: string): string {
@@ -157,6 +164,26 @@ export function ApiKeysSheet({
                 </SheetHeader>
 
                 <div className="mt-6 space-y-4 px-4">
+                    <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-muted-foreground">
+                                Project ID
+                            </span>
+                            <span className="font-mono text-xs text-foreground">
+                                {projectId}
+                            </span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={handleCopyProjectId}
+                        >
+                            <Copy className="h-3.5 w-3.5" />
+                            <span className="sr-only">Copy Project ID</span>
+                        </Button>
+                    </div>
+
                     {canCreate && (
                         <div className="flex justify-end">
                             <Button

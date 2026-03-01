@@ -8,7 +8,11 @@ export enum NodeType {
     COMPONENT = "COMPONENT",
 }
 
-export type ViewType = "CONTEXT" | "CONTAINER" | "COMPONENT";
+export enum ViewType {
+    CONTEXT = "CONTEXT",
+    CONTAINER = "CONTAINER",
+    COMPONENT = "COMPONENT",
+}
 
 export interface ContainerInfo {
     name: string;
