@@ -90,9 +90,7 @@ export function ProjectList({
                     <h1 className="text-3xl font-bold tracking-tight">
                         Projects
                     </h1>
-                    <p className="text-muted-foreground">
-                        Manage projects in {organizationName}.
-                    </p>
+                    <p className="text-muted-foreground">Manage projects.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <ToggleGroup
