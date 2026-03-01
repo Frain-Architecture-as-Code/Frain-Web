@@ -23,43 +23,35 @@ export function OrganizationList({
 
     return (
         <div className="space-y-6">
-            <BlurFade delay={0.05}>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            Organizations
-                        </h1>
-                        <p className="text-muted-foreground">
-                            Manage your organizations and their projects.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <ToggleGroup
-                            type="single"
-                            value={viewMode}
-                            onValueChange={(value: string) => {
-                                if (value) setViewMode(value as ViewMode);
-                            }}
-                            variant="outline"
-                            size="sm"
-                        >
-                            <ToggleGroupItem
-                                value="list"
-                                aria-label="List view"
-                            >
-                                <List className="h-4 w-4" />
-                            </ToggleGroupItem>
-                            <ToggleGroupItem
-                                value="grid"
-                                aria-label="Grid view"
-                            >
-                                <LayoutGrid className="h-4 w-4" />
-                            </ToggleGroupItem>
-                        </ToggleGroup>
-                        <CreateOrganizationDialog />
-                    </div>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">
+                        Organizations
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Manage your organizations and their projects.
+                    </p>
                 </div>
-            </BlurFade>
+                <div className="flex items-center gap-2">
+                    <ToggleGroup
+                        type="single"
+                        value={viewMode}
+                        onValueChange={(value: string) => {
+                            if (value) setViewMode(value as ViewMode);
+                        }}
+                        variant="outline"
+                        size="sm"
+                    >
+                        <ToggleGroupItem value="list" aria-label="List view">
+                            <List className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="grid" aria-label="Grid view">
+                            <LayoutGrid className="h-4 w-4" />
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                    <CreateOrganizationDialog />
+                </div>
+            </div>
 
             {organizations.length > 0 ? (
                 viewMode === "list" ? (

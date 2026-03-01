@@ -9,7 +9,9 @@ export default function OverviewLayout({ children }: { children: ReactNode }) {
             <AppSidebar />
             <SidebarInset>
                 <DashboardNavbar />
-                <main className="flex-1 p-6">{children}</main>
+                <main className="flex-1 p-6">
+                    <section className="max-w-7xl mx-auto">{children}</section>
+                </main>
             </SidebarInset>
         </SidebarProvider>
     );

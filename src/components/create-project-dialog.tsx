@@ -1,11 +1,9 @@
 "use client";
-import { Globe, Lock, Plus } from "lucide-react";
+import { ProjectController } from "@/services/projects/controller";
+import { ProjectVisibility } from "@/services/projects/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { OrganizationController } from "@/services/organizations/controller";
-import { OrganizationVisibility } from "@/services/organizations/types";
-import { Button } from "../ui/button";
 import {
     Dialog,
     DialogContent,
@@ -14,47 +12,40 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "../ui/dialog";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Globe, Lock, Plus } from "lucide-react";
+import { Label } from "./ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "../ui/select";
+} from "./ui/select";
 
-export default function CreateOrganizationDialog({
-    disabled = false,
+export default function CreateProjectDialog({
+    organizationId,
 }: {
-    disabled?: boolean;
+    organizationId: string;
 }) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
-    const [name, setName] = useState("");
-    const [visibility, setVisibility] = useState<OrganizationVisibility>(
-        OrganizationVisibility.PUBLIC,
+    const [visibility, setVisibility] = useState<ProjectVisibility>(
+        ProjectVisibility.PRIVATE,
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     async function handleSubmit(event: React.FormEvent) {
         event.preventDefault();
-
-        if (!name.trim()) return;
-
         setIsSubmitting(true);
 
         try {
-            await OrganizationController.create({
-                name: name.trim(),
-                visibility,
-            });
+            await ProjectController.create(organizationId, { visibility });
             setOpen(false);
-            setName("");
-            setVisibility(OrganizationVisibility.PUBLIC);
+            setVisibility(ProjectVisibility.PRIVATE);
             router.refresh();
-            toast.success("Organization created successfully");
+            toast.success("Project created successfully");
         } catch (error) {
             toast.error(
                 error instanceof Error
@@ -69,39 +60,28 @@ export default function CreateOrganizationDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" disabled={disabled}>
+                <Button size="sm">
                     <Plus className="mr-1 h-4 w-4" />
-                    New Organization
+                    New Project
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create Organization</DialogTitle>
+                    <DialogTitle>Create Project</DialogTitle>
                     <DialogDescription>
-                        Create a new organization to manage your projects and
-                        team members.
+                        Create a new project in this organization.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="org-name">Name</Label>
-                        <Input
-                            id="org-name"
-                            placeholder="My Organization"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="org-visibility">Visibility</Label>
+                        <Label htmlFor="project-visibility">Visibility</Label>
                         <Select
                             value={visibility}
-                            onValueChange={(value: OrganizationVisibility) =>
+                            onValueChange={(value: ProjectVisibility) =>
                                 setVisibility(value)
                             }
                         >
-                            <SelectTrigger id="org-visibility">
+                            <SelectTrigger id="project-visibility">
                                 <SelectValue placeholder="Select visibility" />
                             </SelectTrigger>
                             <SelectContent>
@@ -115,17 +95,9 @@ export default function CreateOrganizationDialog({
                                 </SelectItem>
                             </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground">
-                            {visibility === "PUBLIC"
-                                ? "Anyone can see this organization and its public projects."
-                                : "Only members can see this organization and its projects."}
-                        </p>
                     </div>
                     <DialogFooter>
-                        <Button
-                            type="submit"
-                            disabled={isSubmitting || !name.trim()}
-                        >
+                        <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? "Creating..." : "Create"}
                         </Button>
                     </DialogFooter>
