@@ -119,6 +119,7 @@ export function ProjectCanvas({
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const currentViewId = searchParams.get("view");
+    const { fitView } = useReactFlow();
 
     const internalNodeIdsRef = useRef<Set<string>>(new Set());
     const activeViewIdRef = useRef<string | null>(
@@ -286,6 +287,10 @@ export function ProjectCanvas({
                 );
             });
     }, [organizationId]);
+
+    useEffect(() => {
+        fitView(FIT_VIEW_OPTIONS);
+    }, [currentViewId]);
 
     const persistNodePosition = useDebouncedCallback(
         (nodeId: string, x: number, y: number) => {
