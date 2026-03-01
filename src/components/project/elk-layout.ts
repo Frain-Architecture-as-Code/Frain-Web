@@ -6,6 +6,7 @@ import type {
     NodeType,
 } from "@/services/c4models/types";
 import { ViewType } from "@/services/c4models/types";
+import { C4EdgeData } from "./floating-edge";
 
 // Lazy singleton ELK instance (SSR-safe).
 let elkInstance: InstanceType<typeof ELK> | null = null;
@@ -140,6 +141,7 @@ function toReactFlowEdge(relation: FrainRelationJSON, index: number): Edge {
         labelBgStyle: DEFAULT_LABEL_BG_STYLE,
         labelBgPadding: DEFAULT_LABEL_BG_PADDING,
         labelBgBorderRadius: 4,
+        data: relation as C4EdgeData,
     };
 }
 
