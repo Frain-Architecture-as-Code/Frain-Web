@@ -53,8 +53,10 @@ export function FloatingEdge(props: EdgeProps<FrainEdge>) {
                     }}
                     className="nodrag nopan p-0.5 text-xs bg-background text-center"
                 >
-                    <span className="block">{data?.description}</span>
-                    <span className="block">
+                    <span className="block font-bold text-[8px]">
+                        {data?.description}
+                    </span>
+                    <span className="block text-[8px]">
                         {data?.technology ? `[${data.technology}]` : ""}
                     </span>
                 </div>
