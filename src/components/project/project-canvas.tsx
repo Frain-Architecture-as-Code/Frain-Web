@@ -1,26 +1,20 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { Background, BackgroundVariant, ReactFlow } from "@xyflow/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-    ReactFlow,
-    Background,
-    BackgroundVariant,
-    useReactFlow,
-} from "@xyflow/react";
+import { useCallback } from "react";
 import "@xyflow/react/dist/style.css";
 
 import { ApiKeysSheet } from "@/components/project/api-keys-sheet";
-import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
-import { ProjectSidebar } from "@/components/project/project-sidebar";
 import { c4NodeTypes } from "@/components/project/c4-nodes";
+import { CreateApiKeyModal } from "@/components/project/create-api-key-modal";
 import { FloatingEdge } from "@/components/project/floating-edge";
-import { FlowActions } from "./flow-actions";
+import { ProjectSidebar } from "@/components/project/project-sidebar";
+import { useDiagramLayout } from "@/hooks/use-diagram-layout";
 
 import { useProjectApiKeys } from "@/hooks/use-project-api-keys";
 import { useProjectMembers } from "@/hooks/use-project-members";
-import { useDiagramLayout } from "@/hooks/use-diagram-layout";
-import { FIT_VIEW_OPTIONS } from "./canva-utils";
+import { FlowActions } from "./flow-actions";
 
 const edgeTypes = { floating: FloatingEdge };
 
@@ -45,7 +39,6 @@ export function ProjectCanvas({
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const currentViewId = searchParams.get("view");
-    const { fitView } = useReactFlow();
 
     // 1. Hook de Miembros y Permisos
     const { members, currentUserRole, canAccessApiKeys } = useProjectMembers(
@@ -91,11 +84,6 @@ export function ProjectCanvas({
         [updateParam, loadView],
     );
 
-    // Re-centrar vista cuando cambia el View
-    useEffect(() => {
-        fitView(FIT_VIEW_OPTIONS);
-    }, [currentViewId, fitView]);
-
     return (
         <div className="relative h-full w-full">
             <ProjectSidebar
@@ -140,8 +128,6 @@ export function ProjectCanvas({
                 onNodeDragStop={handleNodeDragStop}
                 nodeTypes={c4NodeTypes}
                 edgeTypes={edgeTypes}
-                fitView
-                fitViewOptions={FIT_VIEW_OPTIONS}
                 minZoom={0.1}
                 maxZoom={2}
             >
