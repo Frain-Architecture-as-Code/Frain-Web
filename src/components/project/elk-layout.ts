@@ -361,12 +361,12 @@ export async function layoutNodes(
     const edges = relations.map((r, i) => toReactFlowEdge(r, i));
     const internalNodeIds = new Set(nodes.map((n) => n.id));
 
-    // If not forcing relayout and valid positions exist, keep current positions
-    if (!forceRelayout && hasPositions(allNodes)) {
+    // Auto-layout only runs when explicitly requested (forceRelayout = true).
+    // On regular loads, always use stored positions (falling back to 0,0).
+    if (!forceRelayout) {
         const rfNodes = allNodes.map((n) =>
             toReactFlowNode(n, { x: n.x ?? 0, y: n.y ?? 0 }),
         );
-        // For wrapper: only use non-PERSON internal nodes
         const wrapperRfNodes = rfNodes.filter(
             (n) =>
                 internalNodeIds.has(n.id) &&

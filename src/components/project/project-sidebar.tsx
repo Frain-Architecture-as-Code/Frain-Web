@@ -24,6 +24,7 @@ import type { ViewSummaryResponse } from "@/services/c4models/types";
 
 interface ProjectSidebarProps {
     projectId: string;
+    orgId: string;
     modelTitle: string;
     views: ViewSummaryResponse[];
     activeViewId: string | null;
@@ -52,6 +53,7 @@ export function ProjectSidebar({
     activeViewId,
     onViewSelect,
     canAccessApiKeys,
+    orgId,
     onOpenApiKeysModal,
 }: ProjectSidebarProps) {
     const [collapsed, setCollapsed] = useState(false);
@@ -84,7 +86,7 @@ export function ProjectSidebar({
                         className="h-7 w-7"
                         asChild
                     >
-                        <Link href="/dashboard">
+                        <Link href={`/dashboard/${orgId}/projects`}>
                             <ArrowLeft className="h-4 w-4" />
                             <span className="sr-only">Back to dashboard</span>
                         </Link>
