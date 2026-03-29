@@ -8,7 +8,6 @@ import {
     ReactFlow,
     useEdgesState,
     useNodesState,
-    Panel,
     useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -42,49 +41,12 @@ import { type MemberResponse, MemberRole } from "@/services/members/types";
 import { ProjectApiKeyController } from "@/services/project-api-keys/controller";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Button } from "../ui/button";
-import { Focus, Layout } from "lucide-react";
+import { FlowActions } from "./flow-actions";
 
 const PERSIST_DEBOUNCE_MS = 600;
+export const FIT_VIEW_OPTIONS = { padding: 0.2, duration: 800 };
 
 const edgeTypes = { floating: FloatingEdge };
-
-// Static objects to prevent unnecessary ReactFlow re-renders
-const FIT_VIEW_OPTIONS = { padding: 0.2, duration: 800 };
-const PRO_OPTIONS = { hideAttribution: true };
-
-// Canvas action panel
-function FlowActions({ onRelayout }: { onRelayout: () => Promise<void> }) {
-    const { fitView } = useReactFlow();
-
-    const onLayoutClick = async () => {
-        await onRelayout();
-        requestAnimationFrame(() => {
-            fitView(FIT_VIEW_OPTIONS);
-        });
-    };
-
-    return (
-        <Panel position="bottom-right" className="flex gap-2">
-            <Button
-                variant={"secondary"}
-                size={"icon"}
-                onClick={() => fitView(FIT_VIEW_OPTIONS)}
-                title="Center view"
-            >
-                <Focus />
-            </Button>
-            <Button
-                variant={"secondary"}
-                size={"icon"}
-                onClick={onLayoutClick}
-                title="Layout nodes"
-            >
-                <Layout />
-            </Button>
-        </Panel>
-    );
-}
 
 interface ProjectCanvasProps {
     projectId: string;
@@ -500,7 +462,6 @@ export function ProjectCanvas({
                 fitViewOptions={FIT_VIEW_OPTIONS}
                 minZoom={0.1}
                 maxZoom={2}
-                proOptions={PRO_OPTIONS}
             >
                 <Background
                     variant={BackgroundVariant.Cross}
