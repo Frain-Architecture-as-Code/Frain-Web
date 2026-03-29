@@ -36,6 +36,7 @@ import {
 } from "@/lib/permissions";
 import type { MemberResponse, MemberRole } from "@/services/members/types";
 import type { ProjectApiKeyResponse } from "@/services/project-api-keys/types";
+import { formatDate } from "@/lib/utils";
 
 export interface ApiKeyWithFull extends ProjectApiKeyResponse {
     fullKey?: string;
@@ -100,20 +101,6 @@ export function ApiKeysSheet({
     function handleCopyProjectId(): void {
         navigator.clipboard.writeText(projectId);
         toast.success("Project ID copied to clipboard");
-    }
-
-    function formatDate(dateString: string): string {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 0) return "Today";
-        if (diffDays === 1) return "Yesterday";
-        if (diffDays < 7) return `${diffDays}d ago`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-        if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
-        return `${Math.floor(diffDays / 365)}y ago`;
     }
 
     function handleRevokeClick(
