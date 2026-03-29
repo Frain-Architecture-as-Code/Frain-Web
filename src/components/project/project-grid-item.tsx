@@ -17,15 +17,13 @@ export default function ProjectGridItem({
         <Link
             href={`/dashboard/${project.organizationId}/project/${project.projectId}`}
         >
-            <Card className="transition-colors hover:bg-muted/50">
-                <CardContent className="space-y-3">
-                    <div className="flex items-start justify-between">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-                            <FolderKanban className="h-5 w-5 text-primary" />
+            <Card className="transition-colors hover:bg-muted/50 h-full">
+                <CardContent className="space-y-3 flex flex-col h-full">
+                    <div className="flex items-center justify-between">
+                        <div className="flex size-10 items-center justify-center rounded-md bg-primary/10">
+                            <FolderKanban className="size-5 text-primary" />
                         </div>
-                        <div className="flex items-center gap-2">
-                            <VisibilityBadge visibility={project.visibility} />
-                        </div>
+                        <VisibilityBadge visibility={project.visibility} />
                     </div>
                     <div>
                         <p className="font-medium">
@@ -36,8 +34,10 @@ export default function ProjectGridItem({
                                 {projectDetails.description}
                             </p>
                         )}
-                        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
+                    </div>
+                    <div className="mt-2 flex items-end text-xs text-muted-foreground flex-1">
+                        <div className="flex items-center gap-1.5">
+                            <Calendar className="size-4" />
                             <span>Created {formatDate(project.createdAt)}</span>
                         </div>
                     </div>
