@@ -1,7 +1,7 @@
 import { Panel, useReactFlow } from "@xyflow/react";
-import { FIT_VIEW_OPTIONS } from "./project-canvas";
 import { Button } from "../ui/button";
 import { Focus, Layout } from "lucide-react";
+import { FIT_VIEW_OPTIONS } from "./canva-utils";
 
 export function FlowActions({
     onRelayout,
