@@ -32,19 +32,18 @@ export function ComponentNode(props: NodeProps) {
                 style={{ background: s.stroke }}
             />
             <svg
-                width={w + tabW / 2}
+                width={w}
                 height={h}
                 viewBox={`0 0 ${w} ${h}`}
-                style={{ overflow: "visible" }}
                 role="img"
                 aria-label={`${data.label} - Component`}
             >
                 {/* Main body */}
                 <rect
-                    x={inset}
-                    y={inset}
-                    width={w - inset * 2}
-                    height={h - inset * 2}
+                    x={0.75}
+                    y={0.75}
+                    width={w - 1.5}
+                    height={h - 1.5}
                     rx={r}
                     ry={r}
                     fill={s.bg}
