@@ -57,6 +57,47 @@ interface ProjectCanvasProps {
     initialApiKeys: ProjectApiKeyResponse[];
 }
 
+const COLLISION_MARGIN = 12;
+
+function resolveAgainstWrapper(
+    node: Node<C4NodeData>,
+    wrapper: Node,
+): { x: number; y: number } | null {
+    const nX = node.position.x;
+    const nY = node.position.y;
+    const nW = (node.width as number) ?? 200;
+    const nH = (node.height as number) ?? 120;
+
+    const wX = wrapper.position.x;
+    const wY = wrapper.position.y;
+    const wW = (wrapper.width as number) ?? 0;
+    const wH = (wrapper.height as number) ?? 0;
+
+    const overlapX = Math.min(nX + nW, wX + wW) - Math.max(nX, wX);
+    const overlapY = Math.min(nY + nH, wY + wH) - Math.max(nY, wY);
+
+    if (overlapX <= 0 || overlapY <= 0) return null; // sin colisión
+
+    // Empujar por el eje de menor penetración (MTV)
+    if (overlapX < overlapY) {
+        const pushedLeft = nX + nW / 2 < wX + wW / 2;
+        return {
+            x: pushedLeft
+                ? wX - nW - COLLISION_MARGIN
+                : wX + wW + COLLISION_MARGIN,
+            y: nY,
+        };
+    } else {
+        const pushedUp = nY + nH / 2 < wY + wH / 2;
+        return {
+            x: nX,
+            y: pushedUp
+                ? wY - nH - COLLISION_MARGIN
+                : wY + wH + COLLISION_MARGIN,
+        };
+    }
+}
+
 export function ProjectCanvas({
     projectId,
     organizationId,
@@ -289,6 +330,21 @@ export function ProjectCanvas({
                     }
                 }
 
+                if (!internalNodeIdsRef.current.has(draggedNode.id)) {
+                    if (!currentWrapper) return currentNodes;
+                    const corrected = resolveAgainstWrapper(
+                        draggedNode,
+                        currentWrapper,
+                    );
+                    if (!corrected) return currentNodes;
+                    return currentNodes.map((n) =>
+                        n.id === draggedNode.id
+                            ? { ...n, position: corrected }
+                            : n,
+                    ) as Node<C4NodeData>[];
+                }
+
+                // ── Nodo interno: actualizar wrapper como antes
                 const updatedWrapper = buildGroupWrapperNode(
                     internalNodes as Node<C4NodeData>[],
                 );
@@ -314,13 +370,47 @@ export function ProjectCanvas({
         (_event: React.MouseEvent, node: Node<C4NodeData>) => {
             if (!activeViewIdRef.current) return;
 
-            persistNodePosition(
-                node.id,
-                Math.round(node.position.x),
-                Math.round(node.position.y),
-            );
+            setNodes((currentNodes) => {
+                const current = currentNodes.find((n) => n.id === node.id);
+                if (!current) return currentNodes;
+
+                // Para nodos externos, aplicar corrección final de colisión
+                if (!internalNodeIdsRef.current.has(node.id)) {
+                    const wrapper = currentNodes.find(
+                        (n) => n.id === GROUP_WRAPPER_ID,
+                    );
+                    const finalPos = wrapper
+                        ? (resolveAgainstWrapper(
+                              current as Node<C4NodeData>,
+                              wrapper,
+                          ) ?? current.position)
+                        : current.position;
+
+                    persistNodePosition(
+                        node.id,
+                        Math.round(finalPos.x),
+                        Math.round(finalPos.y),
+                    );
+
+                    if (finalPos !== current.position) {
+                        return currentNodes.map((n) =>
+                            n.id === node.id ? { ...n, position: finalPos } : n,
+                        ) as Node<C4NodeData>[];
+                    }
+
+                    return currentNodes;
+                }
+
+                // Nodo interno: persistir posición normal
+                persistNodePosition(
+                    node.id,
+                    Math.round(current.position.x),
+                    Math.round(current.position.y),
+                );
+                return currentNodes;
+            });
         },
-        [persistNodePosition],
+        [persistNodePosition, setNodes],
     );
 
     const handleViewClick = useCallback(
