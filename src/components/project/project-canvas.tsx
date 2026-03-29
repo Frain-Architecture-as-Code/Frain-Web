@@ -413,7 +413,7 @@ export function ProjectCanvas({
                         id: result.id,
                         projectId: result.projectId,
                         memberId: result.memberId,
-                        apiKeySecret: result.apiKeySecret.slice(0, 8),
+                        apiKeySecret: result.apiKeySecret,
                         lastUsedAt: result.lastUsedAt ?? "",
                         createdAt: result.createdAt,
                         fullKey: result.apiKeySecret,
