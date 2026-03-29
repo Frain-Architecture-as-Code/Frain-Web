@@ -348,7 +348,7 @@ export function ApiKeysSheet({
                             <AlertDialogDescription>
                                 Are you sure you want to revoke the API key{" "}
                                 <span className="font-mono font-semibold">
-                                    {keyToRevoke?.prefix}...
+                                    {keyToRevoke?.prefix.slice(0, 8)}...
                                 </span>{" "}
                                 for{" "}
                                 <span className="font-semibold">
