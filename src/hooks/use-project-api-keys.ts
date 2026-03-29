@@ -48,10 +48,7 @@ export function useProjectApiKeys(
                     projectId,
                     { targetMemberId: memberId },
                 );
-                toast.success("API key created", {
-                    description: `Key: ${result.apiKeySecret}`,
-                    duration: 10000,
-                });
+                toast.success("API key created");
                 setApiKeys((prev) => [
                     {
                         id: result.id,
