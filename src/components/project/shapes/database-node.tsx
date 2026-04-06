@@ -8,10 +8,9 @@ import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { NodeContent } from "./node-content";
 
 const COLOURS = {
-    dark: { bg: "#438DD5", stroke: "#3A7BC0", text: "#ffffff" },
-    light: { bg: "#BFD9F5", stroke: "#2B6CB0", text: "#0D2B4E" },
+    dark: { bg: "#0097D1", stroke: "#3A7BC0", text: "#ffffff" },
+    light: { bg: "#B3EAF9", stroke: "#2B6CB0", text: "#0D2B4E" },
 };
-
 /**
  * DatabaseNode - Cylinder shape for database storage
  * Features an elliptical top cap and cylindrical body

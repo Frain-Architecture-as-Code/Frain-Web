@@ -1,6 +1,5 @@
 import type { C4NodeData } from "@/components/project/elk-layout";
 import { NodeType } from "@/services/c4models/types";
-import { NODE_LABELS } from "./constants";
 
 interface NodeContentProps {
     data: C4NodeData;
@@ -49,7 +48,6 @@ export function NodeContent({
     width,
     height,
 }: NodeContentProps) {
-    const label = NODE_LABELS[nodeType];
     const mutedColor =
         textColor === "#ffffff" ? "rgba(255,255,255,0.70)" : "rgba(0,0,0,0.55)";
 
